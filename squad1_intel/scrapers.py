@@ -136,25 +136,61 @@ def scrape_reddit_ai(seen: set) -> list:
 # ── Scraper: Goodreads Bengali Shelf ──────────────────────────────────────
 
 def scrape_bengali_goodreads(seen: set) -> list:
+    """
+    Scrapes Bengali shelf AND fetches each book's individual page
+    to get the real description and genre — prevents LLM hallucinating plot/author.
+    """
     url = "https://www.goodreads.com/shelf/show/bangla"
     try:
         resp = requests.get(url, headers=_headers(), timeout=10)
         _sleep()
         soup = BeautifulSoup(resp.text, "html.parser")
-        # Target text nodes, not fragile class names
         book_elements = soup.find_all("div", class_="elementList")
         results = []
-        for el in book_elements[:4]:
+        for el in book_elements[:3]:
             title_tag = el.find("a", class_="bookTitle") or el.find("a")
             title = title_tag.get_text(strip=True) if title_tag else ""
+            book_url = "https://www.goodreads.com" + title_tag["href"] if title_tag and title_tag.get("href") else ""
             author_tag = el.find("a", class_="authorName")
             author = author_tag.get_text(strip=True) if author_tag else "Unknown author"
             if not title or not is_new(title, seen):
                 continue
+
+            # Fetch individual book page to get real description
+            description = ""
+            genres = ""
+            if book_url:
+                try:
+                    book_resp = requests.get(book_url, headers=_headers(), timeout=10)
+                    _sleep()
+                    book_soup = BeautifulSoup(book_resp.text, "html.parser")
+                    # Description
+                    desc_tag = book_soup.find("div", {"data-testid": "description"}) or \
+                               book_soup.find("div", id="description") or \
+                               book_soup.find("span", class_="readable")
+                    if desc_tag:
+                        description = desc_tag.get_text(strip=True)[:300]
+                    # Genres
+                    genre_tags = book_soup.find_all("a", {"data-testid": "genreChip"}) or \
+                                 book_soup.find_all("a", class_="actionLinkLite bookPageGenreLink")
+                    genres = ", ".join([g.get_text(strip=True) for g in genre_tags[:3]])
+                except Exception:
+                    pass  # Use fallback summary if book page fetch fails
+
+            summary = f"Author: {author}."
+            if genres:
+                summary += f" Genre: {genres}."
+            if description:
+                summary += f" Plot: {description}"
+            else:
+                summary += " [Description unavailable — use only author and title in review, do not invent plot details.]"
+
             results.append({
                 "platform": "Goodreads Bengali",
                 "title": title,
-                "summary": f"Bengali book by {author}. Trending on the Bangla shelf."
+                "author": author,
+                "genres": genres or "Bengali fiction",
+                "summary": summary,
             })
             mark_seen(title, seen)
         return results

@@ -1,0 +1,58 @@
+name: Daily media empire run
+
+on:
+  schedule:
+    # Runs at 6:00 AM UTC daily (11:30 AM IST)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Also allows manual trigger from GitHub Actions UI
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests beautifulsoup4 python-dotenv groq lxml
+
+      - name: Create .env from secrets
+        run: |
+          echo "OLLAMA_MODEL=llama3:8b" >> .env
+          echo "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" >> .env
+          echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
+          echo "AMAZON_AFFILIATE_TAG=${{ secrets.AMAZON_AFFILIATE_TAG }}" >> .env
+          echo "BEEHIIV_API_KEY=${{ secrets.BEEHIIV_API_KEY }}" >> .env
+
+      - name: Run Squad 1 — Intel scrape
+        run: python squad1_intel/squad1_run.py
+
+      - name: Run Squad 2 — Content generation
+        # In GitHub Actions, Ollama isn't available so Groq fallback is used
+        run: python squad2_content/squad2_run.py
+
+      - name: Upload digest and scripts as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-content-${{ github.run_id }}
+          path: |
+            master_intel_digest.md
+            squad2_output/
+          retention-days: 7
+
+      - name: Commit seen_items.json (dedup persistence)
+        run: |
+          git config user.name "media-empire-bot"
+          git config user.email "bot@noreply.com"
+          git add seen_items.json || true
+          git diff --staged --quiet || git commit -m "chore: update dedup index $(date +%Y-%m-%d)"
+          git push || true

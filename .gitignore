@@ -1,0 +1,29 @@
+# Secrets — never commit these
+.env
+
+# Agent outputs — too large for git
+*.mp4
+*.mp3
+*.wav
+master_intel_digest.md
+weekly_report.md
+seen_items.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep README and example files
+!README.md
+!.env.example

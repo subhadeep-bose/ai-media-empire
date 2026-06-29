@@ -46,13 +46,13 @@ jobs:
           name: daily-content-${{ github.run_id }}
           path: |
             master_intel_digest.md
-            squad2_output/
+            squad2_output/**
           retention-days: 7
 
       - name: Commit seen_items.json (dedup persistence)
         run: |
           git config user.name "media-empire-bot"
           git config user.email "bot@noreply.com"
-          git add seen_items.json || true
+          git add -f seen_items.json || true
           git diff --staged --quiet || git commit -m "chore: update dedup index $(date +%Y-%m-%d)"
           git push || true

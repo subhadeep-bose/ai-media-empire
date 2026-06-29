@@ -1,6 +1,6 @@
 """
 main.py — Master Controller
-Chains: Squad 1 (Intel) → Squad 2 (Content) → Gmail approval email drop
+Chains: Squad 1 (Intel) → Squad 2 (Content) → Squad 3 (Multimedia) → approval email
 Run this daily via GitHub Actions or local cron.
 """
 
@@ -79,13 +79,19 @@ def main():
         log("Squad 2 failed — Intel digest exists, content not generated today.")
         sys.exit(1)
 
-    # Step 3: Notify for approval
+    # Step 3: Multimedia production (TTS + metadata)
+    squad3_ok = run_squad("squad3_production/squad3_run.py", "Squad 3 (Multimedia)")
+    if not squad3_ok:
+        log("Squad 3 failed — scripts exist but no audio/metadata generated today.")
+        # Non-fatal: approval email still useful
+
+    # Step 4: Notify for approval
     send_gmail_approval(date_str)
 
     log("=" * 50)
     log("DAILY RUN COMPLETE")
     log(f"Log saved: {LOG_FILE}")
-    log("Next: approve scripts in Claude.ai via Gmail MCP, then post manually or via APIs")
+    log("Next: review squad3_output/, approve scripts, then post via APIs")
     log("=" * 50)
 
 

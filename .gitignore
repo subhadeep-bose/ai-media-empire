@@ -5,9 +5,13 @@
 *.mp4
 *.mp3
 *.wav
-master_intel_digest.md
 weekly_report.md
-seen_items.json
+
+# Keep these out of the repo but let Actions upload them as artifacts
+squad2_output/
+
+# Allow seen_items.json — needed for dedup persistence across runs
+!seen_items.json
 
 # Python
 __pycache__/

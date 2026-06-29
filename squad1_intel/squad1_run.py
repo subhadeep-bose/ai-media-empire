@@ -11,7 +11,8 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+REPO_ROOT = Path(__file__).parent.parent
+load_dotenv(REPO_ROOT / ".env")
 
 from scrapers import (
     load_seen_items, save_seen_items,
@@ -22,7 +23,7 @@ from scrapers import (
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-LOG_DIR = Path("../logs")
+LOG_DIR = REPO_ROOT / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 
@@ -54,9 +55,12 @@ def call_groq(prompt: str) -> str:
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 2000,
             },
-            timeout=30,
+            timeout=60,
         )
-        return resp.json()["choices"][0]["message"]["content"]
+        data = resp.json()
+        if "choices" not in data:
+            return f"[ERROR] Groq API error: {data.get('error', data)}"
+        return data["choices"][0]["message"]["content"]
     except Exception as e:
         return f"[ERROR] Groq also failed: {e}"
 
@@ -130,7 +134,7 @@ def main():
     digest = call_ollama(prompt)
 
     # Save digest for Squad 2
-    output_path = Path("../master_intel_digest.md")
+    output_path = REPO_ROOT / "master_intel_digest.md"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(f"# Daily Intel Digest — {datetime.now().strftime('%Y-%m-%d')}\n\n")
         f.write(digest)

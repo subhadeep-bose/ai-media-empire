@@ -12,12 +12,13 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+REPO_ROOT = Path(__file__).parent.parent
+load_dotenv(REPO_ROOT / ".env")
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-DIGEST_PATH = Path("../master_intel_digest.md")
-OUTPUT_DIR = Path("../squad2_output")
+DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
+OUTPUT_DIR = REPO_ROOT / "squad2_output"
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
@@ -37,9 +38,12 @@ def call_llm(prompt: str) -> str:
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
                 json={"model": "llama3-8b-8192", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1500},
-                timeout=30,
+                timeout=60,
             )
-            return r.json()["choices"][0]["message"]["content"]
+            data = r.json()
+            if "choices" not in data:
+                return f"[ERROR] Groq API error: {data.get('error', data)}"
+            return data["choices"][0]["message"]["content"]
         except Exception as e:
             return f"[ERROR] {e}"
 

@@ -30,22 +30,31 @@ def call_llm(prompt: str) -> str:
         r = ollama.chat(model=OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}])
         return r["message"]["content"]
     except Exception:
-        if not GROQ_API_KEY:
-            return "[ERROR] No LLM available"
+        pass
+    if not GROQ_API_KEY:
+        return "[ERROR] No LLM available"
+    import requests, time
+    for attempt in range(4):
         try:
-            import requests
             r = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-                json={"model": "llama-3.1-8b-instant", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1500},
+                json={"model": "llama-3.1-8b-instant", "messages": [{"role": "user", "content": prompt}], "max_tokens": 1000},
                 timeout=60,
             )
             data = r.json()
-            if "choices" not in data:
-                return f"[ERROR] Groq API error: {data.get('error', data)}"
-            return data["choices"][0]["message"]["content"]
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            err = data.get("error", {})
+            if isinstance(err, dict) and err.get("code") == "rate_limit_exceeded":
+                wait = 15 * (attempt + 1)
+                print(f"[WARN] Groq rate limit — waiting {wait}s (attempt {attempt+1}/4)...")
+                time.sleep(wait)
+                continue
+            return f"[ERROR] Groq API error: {err}"
         except Exception as e:
             return f"[ERROR] {e}"
+    return "[ERROR] Groq rate limit exceeded after retries"
 
 
 # ── Phrasing variant randomiser (shadowban protection) ────────────────────

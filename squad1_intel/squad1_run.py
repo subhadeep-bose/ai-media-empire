@@ -42,27 +42,35 @@ def call_ollama(prompt: str) -> str:
         return call_groq(prompt)
 
 
-def call_groq(prompt: str) -> str:
+def call_groq(prompt: str, max_tokens: int = 1500) -> str:
     if not GROQ_API_KEY:
         return "[ERROR] Both Ollama and Groq unavailable. Add GROQ_API_KEY to .env"
-    try:
-        import requests
-        resp = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "llama-3.1-8b-instant",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 2000,
-            },
-            timeout=60,
-        )
-        data = resp.json()
-        if "choices" not in data:
-            return f"[ERROR] Groq API error: {data.get('error', data)}"
-        return data["choices"][0]["message"]["content"]
-    except Exception as e:
-        return f"[ERROR] Groq also failed: {e}"
+    import requests, time
+    for attempt in range(4):
+        try:
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama-3.1-8b-instant",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": max_tokens,
+                },
+                timeout=60,
+            )
+            data = resp.json()
+            if "choices" in data:
+                return data["choices"][0]["message"]["content"]
+            err = data.get("error", {})
+            if isinstance(err, dict) and err.get("code") == "rate_limit_exceeded":
+                wait = 15 * (attempt + 1)
+                print(f"[WARN] Groq rate limit — waiting {wait}s (attempt {attempt+1}/4)...")
+                time.sleep(wait)
+                continue
+            return f"[ERROR] Groq API error: {err}"
+        except Exception as e:
+            return f"[ERROR] Groq also failed: {e}"
+    return "[ERROR] Groq rate limit exceeded after retries"
 
 
 # ── Master prompt ──────────────────────────────────────────────────────────

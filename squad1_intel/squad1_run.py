@@ -1,76 +1,40 @@
 """
 Squad 1 — Master Orchestrator
-Runs all 8 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
+Runs all 9 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
 saves master_intel_digest.md for Squad 2 to consume.
 """
 
 import json
-import os
 import sys
+import logging
 from datetime import datetime
 from pathlib import Path
-from dotenv import load_dotenv
 
+# Add repo root to sys.path so config/llm imports work
 REPO_ROOT = Path(__file__).parent.parent
-load_dotenv(REPO_ROOT / ".env")
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
+log = logging.getLogger(__name__)
+
+from config import DIGEST_PATH, LOG_DIR, GROQ_MAX_TOKENS_INTEL
+from llm import call_llm
+
+LOG_DIR.mkdir(exist_ok=True)
+
+# Import scrapers (squad1_intel is CWD when run, so direct import works;
+# also works when run from repo root because scrapers adds REPO_ROOT to path)
+sys.path.insert(0, str(Path(__file__).parent))
 from scrapers import (
     load_seen_items, save_seen_items,
     scrape_github_trending, fetch_arxiv_ai_papers, scrape_reddit_ai,
     scrape_bengali_goodreads, fetch_cricket_news, fetch_soccer_trends,
     fetch_wwe_news, fetch_movie_trends, fetch_gaming_trends,
 )
-
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-LOG_DIR = REPO_ROOT / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-
-
-# ── LLM: Ollama with Groq fallback ────────────────────────────────────────
-
-def call_ollama(prompt: str) -> str:
-    try:
-        import ollama
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return response["message"]["content"]
-    except Exception as e:
-        print(f"[WARN] Ollama failed: {e}. Trying Groq fallback...")
-        return call_groq(prompt)
-
-
-def call_groq(prompt: str, max_tokens: int = 1500) -> str:
-    if not GROQ_API_KEY:
-        return "[ERROR] Both Ollama and Groq unavailable. Add GROQ_API_KEY to .env"
-    import requests, time
-    for attempt in range(4):
-        try:
-            resp = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": "llama-3.1-8b-instant",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": max_tokens,
-                },
-                timeout=60,
-            )
-            data = resp.json()
-            if "choices" in data:
-                return data["choices"][0]["message"]["content"]
-            err = data.get("error", {})
-            if isinstance(err, dict) and err.get("code") == "rate_limit_exceeded":
-                wait = 15 * (attempt + 1)
-                print(f"[WARN] Groq rate limit — waiting {wait}s (attempt {attempt+1}/4)...")
-                time.sleep(wait)
-                continue
-            return f"[ERROR] Groq API error: {err}"
-        except Exception as e:
-            return f"[ERROR] Groq also failed: {e}"
-    return "[ERROR] Groq rate limit exceeded after retries"
 
 
 # ── Master prompt ──────────────────────────────────────────────────────────
@@ -101,14 +65,12 @@ RULES:
 # ── Main ───────────────────────────────────────────────────────────────────
 
 def main():
-    print(f"\n{'='*55}")
-    print(f"  SQUAD 1: Intel run — {datetime.now().strftime('%Y-%m-%d %H:%M')}")
-    print(f"{'='*55}")
+    log.info("SQUAD 1: Intel run — %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
 
     seen = load_seen_items()
-    print(f"[INFO] {len(seen)} items already seen — deduplication active")
+    log.info("%d items already seen — deduplication active", len(seen))
 
-    print("[INFO] Running all 9 scrapers with rate limiting...")
+    log.info("Running all 9 scrapers with rate limiting...")
     raw_feed = (
         scrape_github_trending(seen) +
         fetch_arxiv_ai_papers(seen) +
@@ -121,40 +83,38 @@ def main():
         fetch_gaming_trends(seen)
     )
 
-    # Filter out error entries for the LLM
     good_items = [i for i in raw_feed if "error" not in i]
     error_items = [i for i in raw_feed if "error" in i]
 
-    print(f"[INFO] {len(good_items)} new items collected, {len(error_items)} scraper errors")
+    log.info("%d new items collected, %d scraper errors", len(good_items), len(error_items))
 
     if error_items:
         error_log = LOG_DIR / f"errors_{datetime.now().strftime('%Y%m%d')}.json"
         with open(error_log, "w") as f:
             json.dump(error_items, f, indent=2)
-        print(f"[WARN] Errors logged to {error_log}")
+        log.warning("Errors logged to %s", error_log)
 
     if not good_items:
-        print("[ERROR] No items collected. Check scraper errors. Aborting.")
+        log.error("No items collected. Check scraper errors. Aborting.")
         sys.exit(1)
 
-    print(f"[INFO] Sending {len(good_items)} items to LLM orchestrator...")
+    log.info("Sending %d items to LLM orchestrator...", len(good_items))
     prompt = MASTER_PROMPT.format(data=json.dumps(good_items, indent=2, ensure_ascii=False))
-    digest = call_ollama(prompt)
+    digest = call_llm(prompt, max_tokens=GROQ_MAX_TOKENS_INTEL)
 
-    # Save digest for Squad 2
-    output_path = REPO_ROOT / "master_intel_digest.md"
-    with open(output_path, "w", encoding="utf-8") as f:
+    if digest.startswith("[ERROR]"):
+        log.error("LLM returned an error: %s", digest)
+        sys.exit(1)
+
+    with open(DIGEST_PATH, "w", encoding="utf-8") as f:
         f.write(f"# Daily Intel Digest — {datetime.now().strftime('%Y-%m-%d')}\n\n")
         f.write(digest)
 
-    # Persist updated seen items
     save_seen_items(seen)
 
-    print(f"\n[DONE] Digest saved to {output_path}")
-    print(f"[DONE] {len(seen)} total items in dedup index")
-    print("\n--- DIGEST PREVIEW (first 500 chars) ---")
-    print(digest[:500])
-    print("...")
+    log.info("Digest saved to %s", DIGEST_PATH)
+    log.info("%d total items in dedup index", len(seen))
+    log.info("DIGEST PREVIEW (first 500 chars): %s ...", digest[:500])
 
 
 if __name__ == "__main__":

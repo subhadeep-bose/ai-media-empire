@@ -1,0 +1,25 @@
+from pathlib import Path
+import os
+
+REPO_ROOT = Path(__file__).parent
+
+# LLM
+GROQ_MODEL = "llama-3.1-8b-instant"
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
+GROQ_MAX_TOKENS_INTEL = 1500
+GROQ_MAX_TOKENS_CONTENT = 1000
+GROQ_RATE_LIMIT_RETRIES = 4
+GROQ_RATE_LIMIT_WAIT_BASE = 15
+
+# Scrapers
+SCRAPER_TIMEOUT = 10
+RATE_LIMIT_SECS = 2
+ITEMS_PER_SOURCE = 5
+SUMMARY_MAX_CHARS = 150
+
+# Paths
+SEEN_ITEMS_PATH = REPO_ROOT / "seen_items.json"
+DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
+OUTPUT_DIR = REPO_ROOT / "squad2_output"
+LOG_DIR = REPO_ROOT / "logs"
+DOCS_DIR = REPO_ROOT / "docs"

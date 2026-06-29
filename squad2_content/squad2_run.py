@@ -1,65 +1,32 @@
 """
 Squad 2 — Content Creation Engine
-Reads master_intel_digest.md -> generates per-niche scripts for all 5 accounts.
+Reads master_intel_digest.md -> generates per-niche scripts for all 7 generators
+using ThreadPoolExecutor for parallel execution (max_workers=3 to respect TPM).
 """
 
-import os
 import json
 import random
+import sys
+import logging
 from datetime import datetime
 from pathlib import Path
-from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-ROOT = Path(__file__).parent.parent
-load_dotenv(ROOT / ".env")
+# Add repo root to sys.path so config/llm imports work
+REPO_ROOT = Path(__file__).parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-DIGEST_PATH = ROOT / "master_intel_digest.md"
-OUTPUT_DIR = ROOT / "squad2_output"
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+)
+log = logging.getLogger(__name__)
+
+from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT
+from llm import call_llm
+
 OUTPUT_DIR.mkdir(exist_ok=True)
-
-
-# ── LLM caller ────────────────────────────────────────────────────────────
-
-def call_llm(prompt: str) -> str:
-    # Try Ollama first
-    try:
-        import ollama
-        r = ollama.chat(model=OLLAMA_MODEL, messages=[{"role": "user", "content": prompt}])
-        return r["message"]["content"]
-    except Exception:
-        pass
-
-    # Groq fallback
-    if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
-        return "[ERROR] No LLM available — add GROQ_API_KEY to .env"
-    import requests, time
-    for attempt in range(4):
-        try:
-            r = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": "llama-3.1-8b-instant",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 1000,
-                },
-                timeout=60,
-            )
-            data = r.json()
-            if "choices" in data:
-                return data["choices"][0]["message"]["content"]
-            err = data.get("error", {})
-            if isinstance(err, dict) and err.get("code") == "rate_limit_exceeded":
-                wait = 15 * (attempt + 1)
-                print(f"[WARN] Groq rate limit — waiting {wait}s (attempt {attempt+1}/4)...")
-                time.sleep(wait)
-                continue
-            return f"[ERROR] Groq: {err.get('message', str(err)) if isinstance(err, dict) else str(data)[:200]}"
-        except Exception as e:
-            return f"[ERROR] {e}"
-    return "[ERROR] Groq rate limit exceeded after retries"
 
 
 # ── Hook variation (shadowban protection) ─────────────────────────────────
@@ -97,7 +64,7 @@ FORMAT:
 
 Tone: smart friend explaining tech over coffee. Contractions OK. Not corporate.
 Output ONLY the newsletter. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_twitter_thread(digest: str) -> str:
@@ -118,7 +85,7 @@ Rules:
 - NEVER invent statistics, numbers, or data not present in the source digest.
 - Only use facts directly from the digest — no embellishment.
 Output ONLY the tweets separated by ---
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_ai(digest: str) -> str:
@@ -136,7 +103,7 @@ FORMAT:
 
 Tone: energetic, clear, no jargon. Spoken words, not text.
 Output ONLY the script with timestamps. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_sports(digest: str) -> str:
@@ -161,15 +128,14 @@ CRITICAL RULES - breaking these destroys credibility:
 
 Tone: match-day energy. Short sentences. Drama only for real events.
 Output ONLY the script. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_bengali(digest: str) -> str:
-    # Extract Bengali book items for extra grounding
-    book_items = [line for line in digest.split("\n") 
+    book_items = [line for line in digest.split("\n")
                   if "Goodreads Bengali" in line or "Author:" in line or "Plot:" in line]
     book_context = "\n".join(book_items[:10]) if book_items else ""
-    
+
     return call_llm(f"""
 Write a 45-second Reel script reviewing a Bengali book for Instagram/Shorts.
 
@@ -192,7 +158,7 @@ CRITICAL RULES:
 - Language: English with Bengali titles in native script.
 
 Output ONLY the script. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_movies(digest: str) -> str:
@@ -209,7 +175,7 @@ FORMAT:
 [CTA 40-45s]: "Watch it this weekend. Trust me. Follow for weekly picks."
 
 Output ONLY the script. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_gaming(digest: str) -> str:
@@ -232,7 +198,7 @@ CRITICAL RULES:
 - NEVER invent game titles, prices, or release dates not in the digest.
 
 Output ONLY the script. No preamble.
-""")
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 # ── Approval email ─────────────────────────────────────────────────────────
@@ -254,43 +220,59 @@ def build_approval_email(scripts: dict, date_str: str) -> str:
 
 def main():
     date_str = datetime.now().strftime("%Y-%m-%d")
-    print(f"\n{'='*55}")
-    print(f"  SQUAD 2: Content run — {date_str}")
-    print(f"{'='*55}")
+    log.info("SQUAD 2: Content run — %s", date_str)
 
     if not DIGEST_PATH.exists():
-        print(f"[ERROR] No digest at {DIGEST_PATH}. Run Squad 1 first.")
-        return
+        log.error("No digest at %s. Run Squad 1 first.", DIGEST_PATH)
+        sys.exit(1)
 
     with open(DIGEST_PATH, "r", encoding="utf-8") as f:
         digest = f.read()
 
-    print("[INFO] Digest loaded. Generating scripts for all 5 accounts...")
+    log.info("Digest loaded. Generating scripts for all 7 generators in parallel...")
 
     generators = {
-        "AI Newsletter":               write_newsletter,
-        "Twitter Thread (AI/Tech)":    write_twitter_thread,
-        "Instagram Reel (AI/Tech)":    write_reel_ai,
-        "Instagram Reel (Sports)":     write_reel_sports,
+        "AI Newsletter":                  write_newsletter,
+        "Twitter Thread (AI/Tech)":       write_twitter_thread,
+        "Instagram Reel (AI/Tech)":       write_reel_ai,
+        "Instagram Reel (Sports)":        write_reel_sports,
         "Instagram Reel (Bengali Books)": write_reel_bengali,
-        "Instagram Reel (Movies)":     write_reel_movies,
-        "Instagram Reel (Gaming)":     write_reel_gaming,
+        "Instagram Reel (Movies)":        write_reel_movies,
+        "Instagram Reel (Gaming)":        write_reel_gaming,
     }
 
     scripts = {}
-    for i, (name, fn) in enumerate(generators.items(), 1):
-        print(f"  [{i}/{len(generators)}] {name}...")
-        result = fn(digest)
-        scripts[name] = result
-        if result.startswith("[ERROR]"):
-            print(f"  [WARN] {result}")
+    futures_map = {}
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        for name, fn in generators.items():
+            future = executor.submit(fn, digest)
+            futures_map[future] = name
+
+        for future in as_completed(futures_map):
+            name = futures_map[future]
+            try:
+                result = future.result()
+            except Exception as e:
+                log.exception("Generator %s raised an exception", name)
+                result = f"[ERROR] Generator exception: {e}"
+            scripts[name] = result
+            if result.startswith("[ERROR]"):
+                log.warning("[%s] %s", name, result)
+            else:
+                log.info("[%s] done (%d chars)", name, len(result))
+
+    error_count = sum(1 for v in scripts.values() if v.startswith("[ERROR]"))
+    if error_count > 3:
+        log.error("%d generators failed (threshold: 3). Exiting with code 1.", error_count)
+        sys.exit(1)
 
     # Save individual files
     scripts_dir = OUTPUT_DIR / date_str
     scripts_dir.mkdir(parents=True, exist_ok=True)
 
     for name, content in scripts.items():
-        safe = name.lower().replace(" ", "_").replace("/", "_").replace("(","").replace(")","")
+        safe = name.lower().replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "")
         with open(scripts_dir / f"{safe}.txt", "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -303,11 +285,10 @@ def main():
     with open(OUTPUT_DIR / f"bundle_{date_str}.json", "w", encoding="utf-8") as f:
         json.dump({"date": date_str, "scripts": scripts}, f, indent=2, ensure_ascii=False)
 
-    print(f"\n[DONE] {len(scripts)} scripts saved to {scripts_dir}")
-    print(f"[DONE] Approval email: {scripts_dir}/00_approval_email_draft.txt")
-    print("\n--- NEWSLETTER PREVIEW ---")
-    print(scripts["AI Newsletter"][:400])
-    print("...")
+    log.info("%d scripts saved to %s", len(scripts), scripts_dir)
+    log.info("Approval email: %s/00_approval_email_draft.txt", scripts_dir)
+    preview = scripts.get("AI Newsletter", "")[:400]
+    log.info("NEWSLETTER PREVIEW: %s ...", preview)
 
 
 if __name__ == "__main__":

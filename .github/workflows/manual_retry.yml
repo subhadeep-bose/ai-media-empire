@@ -1,0 +1,112 @@
+name: Manual squad retry
+
+# Re-runs a single squad stage on demand, for when only one stage of the
+# daily pipeline failed and re-running the whole day isn't worth it. Always
+# operates on "today" (UTC) — the squad scripts don't support a date
+# override, so this isn't for backfilling a past date, just retrying the
+# stage that just failed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      squad:
+        description: 'Which stage to retry'
+        required: true
+        type: choice
+        options:
+          - squad1_intel
+          - squad2_content
+          - squad3_production
+          - squad6_analytics
+          - chief_of_staff
+
+jobs:
+  retry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts playwright
+
+      - name: Install Playwright Chromium
+        if: ${{ inputs.squad == 'squad3_production' }}
+        run: playwright install --with-deps chromium
+
+      - name: Install ffmpeg
+        if: ${{ inputs.squad == 'squad3_production' }}
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Run squad1_intel
+        if: ${{ inputs.squad == 'squad1_intel' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OLLAMA_MODEL: llama3:8b
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD1_INTEL: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD1_INTEL }}
+        run: python squad1_intel/squad1_run.py
+
+      - name: Run squad2_content
+        if: ${{ inputs.squad == 'squad2_content' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OLLAMA_MODEL: llama3:8b
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_NEWSLETTER: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_NEWSLETTER }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_TWITTER: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_TWITTER }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_REELS: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_REELS }}
+        run: python squad2_content/squad2_run.py
+
+      - name: Run squad3_production
+        if: ${{ inputs.squad == 'squad3_production' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          OLLAMA_MODEL: llama3:8b
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION }}
+        run: python squad3_production/squad3_run.py
+
+      - name: Run squad6_analytics
+        if: ${{ inputs.squad == 'squad6_analytics' }}
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD6_ANALYTICS: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD6_ANALYTICS }}
+        run: python squad6_analytics/analytics_run.py
+
+      - name: Run chief_of_staff
+        if: ${{ inputs.squad == 'chief_of_staff' }}
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_CHIEF_OF_STAFF: ${{ secrets.TELEGRAM_BOT_TOKEN_CHIEF_OF_STAFF }}
+        run: python chief_of_staff.py
+
+      - name: Upload retry output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-retry-${{ inputs.squad }}-${{ github.run_id }}
+          path: |
+            master_intel_digest.md
+            squad2_output/**
+            squad3_output/**
+            reports/**
+          retention-days: 7
+
+      - name: Commit seen_items.json and analytics state
+        run: |
+          git config user.name "media-empire-bot"
+          git config user.email "bot@noreply.com"
+          git add -f seen_items.json analytics_history.json niche_boosts.json || true
+          git diff --staged --quiet || git commit -m "chore: manual retry of ${{ inputs.squad }} $(date +%Y-%m-%d)"
+          for i in 1 2 3 4; do git push && break || sleep $((i * 4)); done

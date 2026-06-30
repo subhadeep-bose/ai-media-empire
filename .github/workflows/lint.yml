@@ -55,3 +55,23 @@ jobs:
 
       - name: Run tests
         run: pytest tests/ -v
+
+  ruff:
+    name: Ruff lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      # Advisory only for now — there's pre-existing lint debt on main this
+      # doesn't block on. Tightens once that backlog is cleared separately.
+      - name: Run ruff check
+        run: ruff check . --output-format=github
+        continue-on-error: true

@@ -24,7 +24,10 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts
+        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts playwright
+
+      - name: Install Playwright Chromium
+        run: playwright install --with-deps chromium
 
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
@@ -57,7 +60,7 @@ jobs:
       - name: Run Chief of Staff — daily roundup
         run: python chief_of_staff.py
 
-      - name: Notify — roundup issue + approval email
+      - name: Notify — roundup issue + approval email + Telegram dashboard
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
@@ -65,6 +68,8 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python notify.py
 
       - name: Run tests

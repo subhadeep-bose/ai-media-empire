@@ -170,6 +170,14 @@ the other still runs:
   Needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `NOTIFY_EMAIL_TO` as repo
   secrets (for Gmail: an [app password](https://myaccount.google.com/apppasswords), not your
   account password).
+- **Telegram dashboard** — sends a stat-tile snapshot of the full day's run (items collected,
+  reels written, audio/video produced, per-squad breakdown, top items) to a Telegram chat.
+  `dashboard.py` builds a dark-themed HTML dashboard from the per-agent report-card JSON
+  sidecars and renders it to a PNG via headless Chromium (Playwright); the PNG is sent with
+  `sendPhoto`, falling back to a text-only `sendMessage` if PNG rendering isn't available.
+  Needs `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` as repo secrets — create a bot via
+  [@BotFather](https://t.me/BotFather) and get your chat ID from
+  [@userinfobot](https://t.me/userinfobot) or the `getUpdates` API.
 
 A separate, pre-existing `Alert on failure` step in `daily_run.yml` opens a `pipeline-failure`-labelled
 issue if the run fails outright, independent of `notify.py`.
@@ -185,6 +193,7 @@ ai-media-empire/
 ├── main.py                    # Pipeline orchestrator (Squad1 -> Squad2 -> Squad3 -> Squad6 -> Chief of Staff)
 ├── chief_of_staff.py          # Aggregates each agent's report card into a daily roundup
 ├── notify.py                  # Posts the roundup as a GitHub Issue + sends the approval email
+├── dashboard.py                # Builds a stat-tile HTML/PNG dashboard for Telegram delivery
 ├── reports/
 │   └── report_card.py         # Shared HTML report-card renderer for named agents
 │
@@ -223,6 +232,7 @@ ai-media-empire/
 │   ├── test_chief_of_staff.py # Report-card roundup aggregation tests
 │   ├── test_notify.py         # GitHub Issue + approval email notification tests
 │   ├── test_report_card.py    # HTML report-card renderer tests
+│   ├── test_dashboard.py      # Stat-tile dashboard builder tests
 │   └── test_main_resilience.py# Squad retry/backoff orchestration tests
 │
 ├── .github/
@@ -255,6 +265,7 @@ ai-media-empire/
 | `PEXELS_API_KEY` | No | Enables Squad 3 stock-footage video assembly; without it, video assembly is skipped |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `NOTIFY_EMAIL_TO` | No | Enables the daily approval email from `notify.py`; without all five, the email is skipped |
 | `GITHUB_TOKEN` | No (auto-set in Actions) | Enables the daily roundup GitHub Issue from `notify.py`; without it, the issue post is skipped |
+| `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | No | Enables the Telegram dashboard snapshot from `notify.py`; without both, the Telegram send is skipped |
 
 ### config.py Settings
 

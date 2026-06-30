@@ -64,6 +64,8 @@ SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 NOTIFY_EMAIL_TO = os.getenv("NOTIFY_EMAIL_TO", "")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 
 AGENT_PROFILES = {
     "chief_of_staff":    {"name": "MS Dhoni",        "role": "Chief of Staff"},

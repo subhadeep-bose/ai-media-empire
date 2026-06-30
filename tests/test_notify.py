@@ -103,3 +103,48 @@ def test_send_approval_email_sends_when_configured(tmp_path):
     mock_smtp.assert_called_once()
     mock_server.login.assert_called_once_with("bot@example.com", "secret")
     mock_server.send_message.assert_called_once()
+
+
+# ── send_telegram_dashboard ─────────────────────────────────────────────────
+
+def test_send_telegram_dashboard_skips_without_credentials():
+    with patch.object(notify, "TELEGRAM_BOT_TOKEN", ""), \
+         patch.object(notify, "TELEGRAM_CHAT_ID", ""), \
+         patch("notify.build_dashboard") as mock_build, \
+         patch("notify.requests.post") as mock_post:
+        notify.send_telegram_dashboard("2026-06-30", "summary text")
+
+    mock_build.assert_not_called()
+    mock_post.assert_not_called()
+
+
+def test_send_telegram_dashboard_sends_photo_when_png_available(tmp_path):
+    png_path = tmp_path / "dashboard.png"
+    png_path.write_bytes(b"fake-png-bytes")
+    mock_resp = MagicMock()
+
+    with patch.object(notify, "TELEGRAM_BOT_TOKEN", "tok"), \
+         patch.object(notify, "TELEGRAM_CHAT_ID", "chat123"), \
+         patch("notify.build_dashboard", return_value=(tmp_path / "dashboard.html", png_path)), \
+         patch("notify.requests.post", return_value=mock_resp) as mock_post:
+        notify.send_telegram_dashboard("2026-06-30", "summary text")
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert "sendPhoto" in args[0]
+    assert kwargs["data"]["chat_id"] == "chat123"
+
+
+def test_send_telegram_dashboard_falls_back_to_text_without_png():
+    mock_resp = MagicMock()
+
+    with patch.object(notify, "TELEGRAM_BOT_TOKEN", "tok"), \
+         patch.object(notify, "TELEGRAM_CHAT_ID", "chat123"), \
+         patch("notify.build_dashboard", return_value=(Path("/tmp/dashboard.html"), None)), \
+         patch("notify.requests.post", return_value=mock_resp) as mock_post:
+        notify.send_telegram_dashboard("2026-06-30", "summary text")
+
+    mock_post.assert_called_once()
+    args, kwargs = mock_post.call_args
+    assert "sendMessage" in args[0]
+    assert kwargs["data"]["chat_id"] == "chat123"

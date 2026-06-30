@@ -21,6 +21,7 @@ from config import (
     ANALYTICS_SKIP_STREAK_THRESHOLD, OUTPUT_DIR,
 )
 from reports.report_card import render_report_card
+import telegram_bot
 
 logging.basicConfig(
     level=logging.INFO,
@@ -113,6 +114,7 @@ def main():
         note="Boosting scrape volume for: " + ", ".join(boosted)
              if boosted else "All tracked niches are producing content normally.",
     )
+    telegram_bot.send_agent_update("squad6_analytics", date_str)
 
 
 if __name__ == "__main__":

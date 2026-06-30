@@ -39,12 +39,18 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OLLAMA_MODEL: llama3:8b
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD1_INTEL: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD1_INTEL }}
         run: python squad1_intel/squad1_run.py
 
       - name: Run Squad 2 — Content generation
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OLLAMA_MODEL: llama3:8b
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_NEWSLETTER: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_NEWSLETTER }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_TWITTER: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_TWITTER }}
+          TELEGRAM_BOT_TOKEN_SQUAD2_REELS: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD2_REELS }}
         run: python squad2_content/squad2_run.py
 
       - name: Run Squad 3 — Multimedia production
@@ -52,12 +58,20 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OLLAMA_MODEL: llama3:8b
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION }}
         run: python squad3_production/squad3_run.py
 
       - name: Run Squad 6 — Analytics feedback loop
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD6_ANALYTICS: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD6_ANALYTICS }}
         run: python squad6_analytics/analytics_run.py
 
       - name: Run Chief of Staff — daily roundup
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_CHIEF_OF_STAFF: ${{ secrets.TELEGRAM_BOT_TOKEN_CHIEF_OF_STAFF }}
         run: python chief_of_staff.py
 
       - name: Notify — roundup issue + approval email + Telegram dashboard

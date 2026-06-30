@@ -39,6 +39,7 @@ from scrapers import (
     fetch_wwe_news, fetch_movie_trends, fetch_gaming_trends,
 )
 from reports.report_card import render_report_card
+import telegram_bot
 
 
 def load_boosted_niches() -> set:
@@ -139,9 +140,10 @@ def main():
     log.info("%d total items in dedup index", len(seen))
     log.info("DIGEST PREVIEW (first 500 chars): %s ...", digest[:500])
 
+    date_str = datetime.now().strftime("%Y-%m-%d")
     render_report_card(
         "squad1_intel",
-        datetime.now().strftime("%Y-%m-%d"),
+        date_str,
         stats={
             "Items Collected": len(good_items),
             "Scraper Errors": len(error_items),
@@ -153,6 +155,7 @@ def main():
         note="Boosted scrape volume for: " + ", ".join(sorted(boosted_niches))
              if boosted_niches else "All niches scraping at normal volume today.",
     )
+    telegram_bot.send_agent_update("squad1_intel", date_str)
 
 
 if __name__ == "__main__":

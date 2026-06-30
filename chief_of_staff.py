@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import AGENT_PROFILES, REPORTS_DIR
 from reports.report_card import render_report_card
+import telegram_bot
 
 logging.basicConfig(
     level=logging.INFO,
@@ -63,6 +64,7 @@ def main():
         note=f"Daily run complete. {len(reported)}/{len(AGENT_RUN_ORDER)} agents filed a report."
              + (f" Missing: {', '.join(AGENT_PROFILES[k]['name'] for k in missing)}." if missing else ""),
     )
+    telegram_bot.send_agent_update("chief_of_staff", date_str)
 
     log.info("%d/%d agents reported in. Roundup saved to %s",
               len(reported), len(AGENT_RUN_ORDER), REPORTS_DIR / date_str / "chief_of_staff.html")

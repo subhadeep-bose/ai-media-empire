@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from config import AGENT_PROFILES, REPORTS_DIR
 from chief_of_staff import AGENT_RUN_ORDER, load_agent_reports
+from reports.png_render import render_html_to_png
 
 logging.basicConfig(
     level=logging.INFO,
@@ -136,23 +137,7 @@ def render_dashboard_png(html_path: Path, png_path: Path) -> Path | None:
     this must never raise, so the pipeline can keep going with a text-only
     Telegram summary instead.
     """
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        log.warning("playwright not installed — skipping dashboard PNG render")
-        return None
-
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page(viewport={"width": 820, "height": 600})
-            page.goto(html_path.resolve().as_uri())
-            page.screenshot(path=str(png_path), full_page=True)
-            browser.close()
-        return png_path
-    except Exception:
-        log.exception("Failed to render dashboard PNG")
-        return None
+    return render_html_to_png(html_path, png_path)
 
 
 def build_dashboard(date_str: str) -> tuple[Path, Path | None]:

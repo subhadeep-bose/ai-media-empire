@@ -26,6 +26,7 @@ log = logging.getLogger(__name__)
 from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS
 from llm import call_llm
 from reports.report_card import render_report_card
+import telegram_bot
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -303,6 +304,9 @@ def render_squad2_report_cards(scripts: dict, date_str: str) -> None:
         note=f"{ok_count}/{len(REEL_NAMES)} Reel scripts ready across AI/Tech, Sports, "
              f"Bengali Books, Movies and Gaming.",
     )
+
+    for agent_key in ("squad2_newsletter", "squad2_twitter", "squad2_reels"):
+        telegram_bot.send_agent_update(agent_key, date_str)
 
 
 # ── Main ───────────────────────────────────────────────────────────────────

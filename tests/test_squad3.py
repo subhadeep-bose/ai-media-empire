@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from squad3_production.tts import _clean_script, generate_srt, NICHE_VOICES
+from squad3_production.tts import _clean_script, generate_srt, generate_audio, NICHE_VOICES
 
 
 # ── TTS helpers ──────────────────────────────────────────────────────────────
@@ -96,3 +96,39 @@ def test_generate_instagram_caption_returns_string():
         result = generate_instagram_caption("Some script", "ai_tech")
     assert isinstance(result, str)
     assert len(result) > 0
+
+
+# ── TTS retry behaviour ──────────────────────────────────────────────────────
+
+def test_generate_audio_retries_then_succeeds(tmp_path):
+    out = tmp_path / "audio.mp3"
+    calls = {"n": 0}
+
+    def fake_run(coro):
+        coro.close()
+        calls["n"] += 1
+        if calls["n"] < 2:
+            raise RuntimeError("No audio was received")
+        out.write_bytes(b"x" * 2048)
+
+    with patch("squad3_production.tts.asyncio.run", side_effect=fake_run), \
+         patch("squad3_production.tts.time.sleep"):
+        result = generate_audio("Some real script content", "sports", out)
+
+    assert result is True
+    assert calls["n"] == 2
+
+
+def test_generate_audio_gives_up_after_max_attempts(tmp_path):
+    out = tmp_path / "audio.mp3"
+
+    def fake_run(coro):
+        coro.close()
+        raise RuntimeError("No audio was received")
+
+    with patch("squad3_production.tts.asyncio.run", side_effect=fake_run), \
+         patch("squad3_production.tts.time.sleep") as mock_sleep:
+        result = generate_audio("Some real script content", "sports", out)
+
+    assert result is False
+    assert mock_sleep.call_count == 2

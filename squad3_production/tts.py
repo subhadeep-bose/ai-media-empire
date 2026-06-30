@@ -7,9 +7,13 @@ Each niche gets a distinct voice for brand consistency.
 import asyncio
 import logging
 import re
+import time
 from pathlib import Path
 
 log = logging.getLogger(__name__)
+
+TTS_RETRY_ATTEMPTS = 3
+TTS_RETRY_WAIT_BASE_SECS = 5
 
 NICHE_VOICES = {
     "ai_tech":       "en-US-GuyNeural",
@@ -54,15 +58,25 @@ def generate_audio(script: str, niche: str, output_path: Path) -> bool:
         log.warning("Empty script after cleaning for niche=%s", niche)
         return False
 
-    try:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        asyncio.run(_synthesise(cleaned, voice, output_path))
-        size_kb = output_path.stat().st_size // 1024
-        log.info("TTS: %s → %s (%dKB, voice=%s)", niche, output_path.name, size_kb, voice)
-        return True
-    except Exception:
-        log.exception("TTS failed for niche=%s", niche)
-        return False
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    for attempt in range(1, TTS_RETRY_ATTEMPTS + 1):
+        try:
+            asyncio.run(_synthesise(cleaned, voice, output_path))
+            size_kb = output_path.stat().st_size // 1024
+            log.info("TTS: %s → %s (%dKB, voice=%s)", niche, output_path.name, size_kb, voice)
+            return True
+        except Exception:
+            if attempt < TTS_RETRY_ATTEMPTS:
+                wait = TTS_RETRY_WAIT_BASE_SECS * attempt
+                log.warning("TTS failed for niche=%s (attempt %d/%d) — retrying in %ds",
+                            niche, attempt, TTS_RETRY_ATTEMPTS, wait)
+                time.sleep(wait)
+            else:
+                log.exception("TTS failed for niche=%s — all %d attempts exhausted",
+                               niche, TTS_RETRY_ATTEMPTS)
+
+    return False
 
 
 def generate_srt(script: str, output_path: Path, wpm: int = 150) -> None:

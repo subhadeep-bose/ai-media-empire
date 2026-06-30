@@ -11,7 +11,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from llm import call_llm
-from config import GROQ_MAX_TOKENS_CONTENT
 
 log = logging.getLogger(__name__)
 

@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import (
     ANALYTICS_HISTORY_PATH, NICHE_BOOST_PATH,
-    ANALYTICS_SKIP_STREAK_THRESHOLD, OUTPUT_DIR,
+    ANALYTICS_SKIP_STREAK_THRESHOLD,
 )
 from reports.report_card import render_report_card
 

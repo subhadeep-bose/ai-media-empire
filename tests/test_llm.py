@@ -3,16 +3,15 @@ Unit tests for llm.py
 """
 
 import sys
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 REPO_ROOT = Path(__file__).parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 import llm as llm_module
-from llm import call_groq, call_llm, call_ollama
+from llm import call_groq, call_llm
 
 
 # ── call_groq success ──────────────────────────────────────────────────────

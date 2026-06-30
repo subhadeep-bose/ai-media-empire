@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from squad3_production.visuals import fetch_stock_clips, _pick_video_file
-from squad3_production.video import assemble_video, get_audio_duration
+from squad3_production.video import assemble_video
 
 
 # ── visuals.py ───────────────────────────────────────────────────────────────

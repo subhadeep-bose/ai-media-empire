@@ -93,7 +93,7 @@ jobs:
         run: python chief_of_staff.py
 
       - name: Upload retry output as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: manual-retry-${{ inputs.squad }}-${{ github.run_id }}
           path: |

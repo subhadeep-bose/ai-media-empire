@@ -90,7 +90,7 @@ jobs:
         run: pytest tests/ -v
 
       - name: Upload all outputs as artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daily-content-${{ github.run_id }}
           path: |

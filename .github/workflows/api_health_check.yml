@@ -47,7 +47,7 @@ jobs:
 
       - name: Open issue on failure
         if: failure()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           GROQ_STATUS: ${{ steps.groq.outputs.status }}
           PEXELS_STATUS: ${{ steps.pexels.outputs.status }}

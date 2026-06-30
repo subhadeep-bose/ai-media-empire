@@ -46,6 +46,24 @@ def hook() -> str:
     return random.choice(HOOK_STARTERS)
 
 
+# ── Niche section extraction (prevents cross-niche content bleed) ─────────
+
+def extract_niche_section(digest: str, keywords: list) -> str:
+    """
+    Return only the markdown section(s) whose header line matches one of the
+    given keywords (case-insensitive). Prevents a generator from grabbing an
+    unrelated story (e.g. AI/Tech) when its own niche has no real content.
+    """
+    lines = digest.split("\n")
+    section, capturing = [], False
+    for line in lines:
+        if line.strip().startswith("#"):
+            capturing = any(kw.lower() in line.lower() for kw in keywords)
+        if capturing:
+            section.append(line)
+    return "\n".join(section).strip()
+
+
 # ── Script generators ─────────────────────────────────────────────────────
 
 def write_newsletter(digest: str) -> str:
@@ -107,11 +125,15 @@ Output ONLY the script with timestamps. No preamble.
 
 
 def write_reel_sports(digest: str) -> str:
+    sports_context = extract_niche_section(digest, ["Cricket", "Football", "WWE"])
+    if not sports_context:
+        return "NO SPORTS CONTENT TODAY"
+
     return call_llm(f"""
 Write a 45-second Reel script for a Cricket, Football and WWE sports account.
 
-Source digest:
-{digest}
+Sports section of today's digest (the ONLY content you may use):
+{sports_context}
 
 FORMAT:
 [HOOK 0-3s]: "{hook()}" - pure emotion. Betrayal, shock, history being made.
@@ -120,10 +142,11 @@ FORMAT:
 [CTA 40-45s]: "Follow for daily sports takes you won't see on TV."
 
 CRITICAL RULES - breaking these destroys credibility:
-- ONLY use facts, names, scores that appear in the source digest above.
+- ONLY use facts, names, scores that appear in the sports section above.
+- NEVER pull in or pivot to AI/Tech, Gaming, Movies, or any other niche's story.
 - NEVER invent match results, scores, player statistics, or player quotes.
 - NEVER fabricate a quote from any real person.
-- If the digest contains no sports news, output exactly: NO SPORTS CONTENT TODAY
+- If the sports section above is empty or has no real news, output exactly: NO SPORTS CONTENT TODAY
 - NEVER include hashtags anywhere in the output.
 
 Tone: match-day energy. Short sentences. Drama only for real events.
@@ -162,28 +185,42 @@ Output ONLY the script. No preamble.
 
 
 def write_reel_movies(digest: str) -> str:
+    movies_context = extract_niche_section(digest, ["Movies", "Movies & TV", "TV"])
+    if not movies_context:
+        return "NO MOVIES CONTENT TODAY"
+
     return call_llm(f"""
 Write a 45-second Reel script for a movie/series recommendation account.
 
-Source digest:
-{digest}
+Movies & TV section of today's digest (the ONLY content you may use):
+{movies_context}
 
 FORMAT:
 [HOOK 0-3s]: "{hook()}" — bold claim about this film/series.
 [SELL IT 3-30s]: No spoilers. Sell the FEELING, not the plot. 4-5 vivid sentences.
-[CREDIBILITY 30-40s]: One real fact: box office, critic score, director, or award.
+[CREDIBILITY 30-40s]: One real fact from the section above: box office, critic score, director, or award.
 [CTA 40-45s]: "Watch it this weekend. Trust me. Follow for weekly picks."
+
+CRITICAL RULES:
+- ONLY write about the film/series named in the section above.
+- NEVER pull in or pivot to AI/Tech, Gaming, Sports, or any other niche's story.
+- NEVER invent box office numbers, critic scores, or awards not present above.
+- If the section above is empty or has no real movie/TV news, output exactly: NO MOVIES CONTENT TODAY
 
 Output ONLY the script. No preamble.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_reel_gaming(digest: str) -> str:
+    gaming_context = extract_niche_section(digest, ["Gaming"])
+    if not gaming_context:
+        return "NO GAMING CONTENT TODAY"
+
     return call_llm(f"""
 Write a 45-second Reel script for a PS5 and Steam Deck gaming account.
 
-Source digest:
-{digest}
+Gaming section of today's digest (the ONLY content you may use):
+{gaming_context}
 
 FORMAT:
 [HOOK 0-3s]: "{hook()}" — must excite a gamer immediately.
@@ -192,10 +229,10 @@ FORMAT:
 [CTA 38-45s]: "Follow for daily PS5 and Steam Deck drops before they sell out."
 
 CRITICAL RULES:
-- ONLY write about gaming topics (PS5, Steam Deck, PC gaming, game releases, deals, updates).
-- If the digest contains no gaming news, output exactly: NO GAMING CONTENT TODAY
-- Never pivot a non-gaming story into a forced gaming angle.
-- NEVER invent game titles, prices, or release dates not in the digest.
+- ONLY write about gaming topics in the section above (PS5, Steam Deck, PC gaming, game releases, deals, updates).
+- NEVER pull in or pivot to AI/Tech, Sports, Movies, or any other niche's story.
+- If the section above is empty or has no real gaming news, output exactly: NO GAMING CONTENT TODAY
+- NEVER invent game titles, prices, or release dates not in the section above.
 
 Output ONLY the script. No preamble.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)

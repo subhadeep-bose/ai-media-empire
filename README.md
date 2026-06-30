@@ -3,14 +3,13 @@
 [![Daily Pipeline](https://github.com/subhadeep-bose/ai-media-empire/actions/workflows/daily_run.yml/badge.svg)](https://github.com/subhadeep-bose/ai-media-empire/actions/workflows/daily_run.yml)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-live-brightgreen)](https://subhadeep-bose.github.io/ai-media-empire/)
 [![Last Commit](https://img.shields.io/github/last-commit/subhadeep-bose/ai-media-empire)](https://github.com/subhadeep-bose/ai-media-empire/commits/main)
 
-> Autonomous multi-niche media content pipeline — scrapes 9 sources daily, generates 7 content pieces across 5 social accounts, and publishes a live dashboard. Cost: $0.
+> Autonomous multi-niche media content pipeline — scrapes 9 sources daily, generates 7 content pieces across 5 social accounts, and uploads them as a downloadable Actions artifact each run. Cost: $0.
 
 **Niches:** AI/Tech · Gaming (PS5 + Steam Deck) · Bengali Literature · Cricket · Football · WWE · Movies & TV
 
-**Stack:** Python 3.11 · Ollama/Llama3 (local) · Groq (fallback) · BeautifulSoup · GitHub Actions · GitHub Pages
+**Stack:** Python 3.11 · Ollama/Llama3 (local) · Groq (fallback) · BeautifulSoup · GitHub Actions
 
 ---
 
@@ -41,8 +40,8 @@
               └────────────┬────────────┘
                            │
               ┌────────────▼────────────┐
-              │  GitHub Pages Dashboard  │
-              │  docs/index.html (auto)  │
+              │   daily-content Artifact │
+              │  (uploaded every run)   │
               └─────────────────────────┘
                            │
                     Manual Post
@@ -59,7 +58,6 @@
 - **Deduplication** — SHA-256 hash index in `seen_items.json` prevents re-processing items across runs
 - **Real RSS extraction** — Reddit content tags stripped of HTML and truncated, not hardcoded placeholder text
 - **Parallel generation** — `ThreadPoolExecutor(max_workers=3)` for Squad 2 to respect API TPM limits
-- **GitHub Pages dashboard** — auto-generated `docs/index.html` after every run
 - **File locking** — `fcntl.flock` on Linux to prevent concurrent write corruption of `seen_items.json`
 - **Hallucination guards** — sports and Bengali book scripts include strict "ONLY use facts from the digest" rules
 
@@ -85,7 +83,6 @@ export GROQ_API_KEY=your_key_here
 # 5. Run the full pipeline
 python squad1_intel/squad1_run.py
 python squad2_content/squad2_run.py
-python generate_site.py
 
 # 6. Run tests
 pytest tests/ -v
@@ -103,16 +100,11 @@ pytest tests/ -v
 
 ---
 
-## GitHub Pages Setup
+## Reviewing daily output
 
-1. Go to **Settings → Pages**
-2. Set **Source** to **Deploy from a branch**
-3. Set **Branch** to `main`, folder `/docs`
-4. Click **Save**
-
-The dashboard will be live at `https://<your-username>.github.io/ai-media-empire/` after the next pipeline run.
-
-Alternatively, use the included `pages.yml` workflow which deploys automatically when `docs/` changes.
+Each scheduled run uploads its full output (digest, scripts, audio, video, captions, metadata) as a
+`daily-content-<run_id>` artifact on the **Actions** tab (retained 7 days) — download it from there to
+review and approve before posting manually.
 
 ---
 
@@ -122,7 +114,6 @@ Alternatively, use the included `pages.yml` workflow which deploys automatically
 ai-media-empire/
 ├── config.py                  # All constants and paths (single source of truth)
 ├── llm.py                     # Shared Ollama + Groq LLM module
-├── generate_site.py           # Builds docs/index.html from latest bundle
 ├── main.py                    # Legacy entry point (calls both squads)
 │
 ├── squad1_intel/
@@ -131,9 +122,6 @@ ai-media-empire/
 │
 ├── squad2_content/
 │   └── squad2_run.py          # Squad 2 parallel content generator
-│
-├── docs/
-│   └── index.html             # Auto-generated GitHub Pages dashboard
 │
 ├── squad2_output/
 │   ├── bundle_YYYY-MM-DD.json # Full content bundle per day
@@ -145,8 +133,7 @@ ai-media-empire/
 │   └── test_llm.py            # Unit tests for Groq retry, fallback, error handling
 │
 ├── .github/workflows/
-│   ├── daily_run.yml          # Main pipeline (scrape → generate → test → deploy)
-│   └── pages.yml              # GitHub Pages deployment on docs/ change
+│   └── daily_run.yml          # Main pipeline (scrape → generate → test → upload artifact)
 │
 ├── seen_items.json            # Dedup index (committed back after each run)
 ├── master_intel_digest.md     # LLM-processed intel digest (Squad 1 output)

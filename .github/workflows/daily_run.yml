@@ -11,7 +11,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
-      pages: write
       issues: write
 
     steps:
@@ -55,9 +54,6 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v
 
-      - name: Generate GitHub Pages site
-        run: python generate_site.py
-
       - name: Upload all outputs as artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -68,11 +64,11 @@ jobs:
             squad3_output/**
           retention-days: 7
 
-      - name: Commit seen_items.json, analytics state, and docs
+      - name: Commit seen_items.json and analytics state
         run: |
           git config user.name "media-empire-bot"
           git config user.email "bot@noreply.com"
-          git add -f seen_items.json analytics_history.json niche_boosts.json docs/index.html || true
+          git add -f seen_items.json analytics_history.json niche_boosts.json || true
           git diff --staged --quiet || git commit -m "chore: daily run $(date +%Y-%m-%d)"
           for i in 1 2 3 4; do git push && break || sleep $((i * 4)); done
 

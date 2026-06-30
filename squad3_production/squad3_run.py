@@ -43,7 +43,7 @@ NICHE_MAP = {
 }
 
 SKIP_MARKERS = ["NO SPORTS CONTENT TODAY", "NO GAMING CONTENT TODAY",
-                 "NO BENGALI BOOK CONTENT TODAY", "[ERROR]"]
+                 "NO BENGALI BOOK CONTENT TODAY", "NO MOVIES CONTENT TODAY", "[ERROR]"]
 
 
 def _should_skip(content: str) -> bool:

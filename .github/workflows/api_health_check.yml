@@ -15,33 +15,37 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
     steps:
       - name: Check Groq API key
         id: groq
-        if: ${{ secrets.GROQ_API_KEY != '' }}
+        if: ${{ env.GROQ_API_KEY != '' }}
         run: |
           status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: Bearer ${{ secrets.GROQ_API_KEY }}" \
+            -H "Authorization: Bearer $GROQ_API_KEY" \
             https://api.groq.com/openai/v1/models)
           echo "status=$status" >> "$GITHUB_OUTPUT"
           [ "$status" = "200" ]
 
       - name: Check Pexels API key
         id: pexels
-        if: ${{ secrets.PEXELS_API_KEY != '' }}
+        if: ${{ env.PEXELS_API_KEY != '' }}
         run: |
           status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: ${{ secrets.PEXELS_API_KEY }}" \
+            -H "Authorization: $PEXELS_API_KEY" \
             "https://api.pexels.com/v1/search?query=test&per_page=1")
           echo "status=$status" >> "$GITHUB_OUTPUT"
           [ "$status" = "200" ]
 
       - name: Check Telegram dashboard bot token
         id: telegram
-        if: ${{ secrets.TELEGRAM_BOT_TOKEN != '' }}
+        if: ${{ env.TELEGRAM_BOT_TOKEN != '' }}
         run: |
           status=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/getMe")
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe")
           echo "status=$status" >> "$GITHUB_OUTPUT"
           [ "$status" = "200" ]
 

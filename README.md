@@ -179,6 +179,20 @@ the other still runs:
   [@BotFather](https://t.me/BotFather) and get your chat ID from
   [@userinfobot](https://t.me/userinfobot) or the `getUpdates` API.
 
+#### Per-agent Telegram bots
+
+In addition to the single roundup bot above, each named agent (see `config.AGENT_PROFILES`) can
+post its own report card to Telegram under its own bot identity — its own name and avatar in
+Telegram's chat list, separate from the others. `telegram_bot.py:send_agent_update()` is called by
+each squad script right after it renders its report card; it screenshots that agent's HTML card to
+PNG (via the same `reports/png_render.py` helper `dashboard.py` uses) and sends it through that
+agent's bot.
+
+This is entirely optional and per-agent independent — an agent only posts if its bot token is set.
+Create one bot per agent via @BotFather and set `TELEGRAM_BOT_TOKEN_<AGENT_KEY>` (e.g.
+`TELEGRAM_BOT_TOKEN_SQUAD1_INTEL`) as a repo secret; all agents share the same `TELEGRAM_CHAT_ID`.
+See `.env.example` for the full list of per-agent variable names.
+
 A separate, pre-existing `Alert on failure` step in `daily_run.yml` opens a `pipeline-failure`-labelled
 issue if the run fails outright, independent of `notify.py`.
 
@@ -194,6 +208,7 @@ ai-media-empire/
 ├── chief_of_staff.py          # Aggregates each agent's report card into a daily roundup
 ├── notify.py                  # Posts the roundup as a GitHub Issue + sends the approval email
 ├── dashboard.py                # Builds a stat-tile HTML/PNG dashboard for Telegram delivery
+├── telegram_bot.py             # Per-agent Telegram bot sender (own bot identity per agent)
 ├── reports/
 │   └── report_card.py         # Shared HTML report-card renderer for named agents
 │
@@ -266,6 +281,7 @@ ai-media-empire/
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `NOTIFY_EMAIL_TO` | No | Enables the daily approval email from `notify.py`; without all five, the email is skipped |
 | `GITHUB_TOKEN` | No (auto-set in Actions) | Enables the daily roundup GitHub Issue from `notify.py`; without it, the issue post is skipped |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | No | Enables the Telegram dashboard snapshot from `notify.py`; without both, the Telegram send is skipped |
+| `TELEGRAM_BOT_TOKEN_<AGENT_KEY>` (e.g. `TELEGRAM_BOT_TOKEN_SQUAD1_INTEL`) | No | Per-agent bot token from `telegram_bot.py`, one per `config.AGENT_PROFILES` key; an agent without its token configured just skips its own Telegram update. Shares `TELEGRAM_CHAT_ID` above |
 
 ### config.py Settings
 

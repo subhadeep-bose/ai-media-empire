@@ -24,6 +24,7 @@ from metadata import generate_youtube_metadata, generate_instagram_caption
 from visuals import fetch_stock_clips
 from video import assemble_video
 from reports.report_card import render_report_card
+import telegram_bot
 
 logging.basicConfig(
     level=logging.INFO,
@@ -170,6 +171,7 @@ def main():
         note=f"{video_count} videos and {audio_count} voiceovers assembled for {date_str}."
              if video_count or audio_count else "No multimedia produced today — check upstream scripts.",
     )
+    telegram_bot.send_agent_update("squad3_production", date_str)
 
     if error_count > 2:
         log.error("%d niches failed — check logs", error_count)

@@ -76,3 +76,13 @@ AGENT_PROFILES = {
     "squad3_production": {"name": "Abhishek Sharma",     "role": "Production Chief — Squad 3"},
     "squad6_analytics":  {"name": "Yuvraj Singh",        "role": "Analytics All-Rounder — Squad 6"},
 }
+
+# Per-agent Telegram bots — gives each named agent its own bot identity
+# (own avatar/name in Telegram's sidebar) instead of one shared bot.
+# Create one bot per agent via @BotFather and set its token below; agents
+# without a configured token simply don't post (best-effort, per-agent).
+# All agents share the same TELEGRAM_CHAT_ID (the same recipient/chat).
+TELEGRAM_BOT_TOKENS = {
+    agent_key: os.getenv(f"TELEGRAM_BOT_TOKEN_{agent_key.upper()}", "")
+    for agent_key in AGENT_PROFILES
+}

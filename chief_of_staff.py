@@ -18,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import AGENT_PROFILES, REPORTS_DIR
 from reports.report_card import render_report_card
 import telegram_bot
+from runtime_args import get_date_str
+from usage_tracker import get_usage
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +45,7 @@ def load_agent_reports(date_str: str) -> dict:
 
 
 def main():
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = get_date_str()
     log.info("CHIEF OF STAFF: daily roundup — %s", date_str)
 
     reports = load_agent_reports(date_str)
@@ -59,7 +61,8 @@ def main():
 
     render_report_card(
         "chief_of_staff", date_str,
-        stats={"Agents Reported": len(reported), "Agents Missing": len(missing)},
+        stats={"Agents Reported": len(reported), "Agents Missing": len(missing),
+               "Groq Tokens Used Today": get_usage(date_str)},
         items=items,
         note=f"Daily run complete. {len(reported)}/{len(AGENT_RUN_ORDER)} agents filed a report."
              + (f" Missing: {', '.join(AGENT_PROFILES[k]['name'] for k in missing)}." if missing else ""),

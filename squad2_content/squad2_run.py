@@ -27,6 +27,7 @@ from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKER
 from llm import call_llm
 from reports.report_card import render_report_card
 import telegram_bot
+from runtime_args import get_date_str
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -312,7 +313,7 @@ def render_squad2_report_cards(scripts: dict, date_str: str) -> None:
 # ── Main ───────────────────────────────────────────────────────────────────
 
 def main():
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = get_date_str()
     log.info("SQUAD 2: Content run — %s", date_str)
 
     if not DIGEST_PATH.exists():

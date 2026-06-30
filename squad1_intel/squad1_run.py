@@ -40,6 +40,7 @@ from scrapers import (
 )
 from reports.report_card import render_report_card
 import telegram_bot
+from runtime_args import get_date_str
 
 
 def load_boosted_niches() -> set:
@@ -82,6 +83,7 @@ RULES:
 # ── Main ───────────────────────────────────────────────────────────────────
 
 def main():
+    date_str = get_date_str()
     log.info("SQUAD 1: Intel run — %s", datetime.now().strftime("%Y-%m-%d %H:%M"))
 
     seen = load_seen_items()
@@ -131,7 +133,7 @@ def main():
         sys.exit(1)
 
     with open(DIGEST_PATH, "w", encoding="utf-8") as f:
-        f.write(f"# Daily Intel Digest — {datetime.now().strftime('%Y-%m-%d')}\n\n")
+        f.write(f"# Daily Intel Digest — {date_str}\n\n")
         f.write(digest)
 
     save_seen_items(seen)
@@ -140,7 +142,6 @@ def main():
     log.info("%d total items in dedup index", len(seen))
     log.info("DIGEST PREVIEW (first 500 chars): %s ...", digest[:500])
 
-    date_str = datetime.now().strftime("%Y-%m-%d")
     render_report_card(
         "squad1_intel",
         date_str,

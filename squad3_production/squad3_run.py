@@ -25,6 +25,8 @@ from visuals import fetch_stock_clips
 from video import assemble_video
 from reports.report_card import render_report_card
 import telegram_bot
+from runtime_args import get_date_str
+from moderation import flagged_terms
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,6 +63,13 @@ def process_niche(name: str, script: str, date_str: str) -> dict:
     if _should_skip(script):
         log.info("Skipping %s — no content today", name)
         result["skipped"] = True
+        return result
+
+    hits = flagged_terms(script)
+    if hits:
+        log.error("Skipping %s — moderation flagged terms: %s", name, ", ".join(hits))
+        result["skipped"] = True
+        result["flagged"] = hits
         return result
 
     # Save raw script copy
@@ -103,7 +112,7 @@ def process_niche(name: str, script: str, date_str: str) -> dict:
 
 
 def main():
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = get_date_str()
     log.info("=" * 55)
     log.info("SQUAD 3: Multimedia production — %s", date_str)
     log.info("=" * 55)

@@ -9,6 +9,7 @@ weekly_report.md
 
 # Keep these out of the repo but let Actions upload them as artifacts
 squad2_output/
+reports/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 
 # Allow seen_items.json — needed for dedup persistence across runs
 !seen_items.json

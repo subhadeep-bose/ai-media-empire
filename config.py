@@ -39,3 +39,18 @@ ANALYTICS_HISTORY_PATH = REPO_ROOT / "analytics_history.json"
 NICHE_BOOST_PATH = REPO_ROOT / "niche_boosts.json"
 ANALYTICS_SKIP_STREAK_THRESHOLD = 3   # consecutive skips before boosting scrape volume
 NICHE_BOOST_MULTIPLIER = 2            # scrape this many times ITEMS_PER_SOURCE when boosted
+
+# Named agent personas — single source of truth for report-card branding.
+# Each squad/output-type is fronted by a named "agent" (Indian cricketers)
+# that produces a per-run HTML report card (see reports/report_card.py).
+REPORTS_DIR = REPO_ROOT / "reports"
+
+AGENT_PROFILES = {
+    "chief_of_staff":    {"name": "MS Dhoni",        "role": "Chief of Staff"},
+    "squad1_intel":      {"name": "Virat Kohli",      "role": "Intel Scout — Squad 1"},
+    "squad2_newsletter": {"name": "R Ashwin",         "role": "Newsletter Strategist — Squad 2"},
+    "squad2_twitter":    {"name": "Rohit Sharma",     "role": "Thread Opener — Squad 2"},
+    "squad2_reels":      {"name": "Jasprit Bumrah",   "role": "Reel Scriptwriter — Squad 2"},
+    "squad3_production": {"name": "Rahul Dravid",     "role": "Production Chief — Squad 3"},
+    "squad6_analytics":  {"name": "Ravindra Jadeja",  "role": "Analytics All-Rounder — Squad 6"},
+}

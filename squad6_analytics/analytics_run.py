@@ -20,6 +20,7 @@ from config import (
     ANALYTICS_HISTORY_PATH, NICHE_BOOST_PATH,
     ANALYTICS_SKIP_STREAK_THRESHOLD, OUTPUT_DIR,
 )
+from reports.report_card import render_report_card
 
 logging.basicConfig(
     level=logging.INFO,
@@ -103,6 +104,15 @@ def main():
         log.info("Boosting scrape volume next run for: %s", ", ".join(boosted))
     else:
         log.info("No niches need a scrape boost right now.")
+
+    render_report_card(
+        "squad6_analytics", date_str,
+        stats={"Niches Tracked": len(history), "Boosted Niches": len(boosted)},
+        items=[{"tag": niche, "text": f"skip streak: {record.get('skip_streak', 0)}"}
+               for niche, record in sorted(history.items())],
+        note="Boosting scrape volume for: " + ", ".join(boosted)
+             if boosted else "All tracked niches are producing content normally.",
+    )
 
 
 if __name__ == "__main__":

@@ -62,9 +62,12 @@ chore(deps): bump requests to 2.32.0
 ## Project Structure
 
 ```
-config.py               # All magic numbers, paths, model names — edit here first
+config.py               # All magic numbers, paths, model names, AGENT_PROFILES — edit here first
 llm.py                  # Shared Ollama→Groq LLM module — single source of truth
-main.py                 # Pipeline orchestrator: Squad1 → Squad2
+main.py                 # Pipeline orchestrator: Squad1 → Squad2 → Squad3 → Squad6 → Chief of Staff
+chief_of_staff.py       # Aggregates per-agent report cards into a daily roundup card
+reports/
+  report_card.py        # Shared HTML report-card renderer used by every squad
 squad1_intel/
   scrapers.py           # 9 scrapers — each returns List[dict] or [{"error": ...}]
   squad1_run.py         # Orchestrates scrapers → LLM digest
@@ -78,6 +81,12 @@ tests/                  # pytest — run before every commit
 
 Repo is private — no GitHub Pages (requires GitHub Enterprise on private repos). Review daily
 output via the `daily-content-*` artifact on each Actions run instead of a hosted dashboard.
+
+Each squad is fronted by a named agent persona (Indian cricketers — see `config.AGENT_PROFILES`)
+that calls `reports/report_card.py:render_report_card()` at the end of its run to file a per-run
+HTML report card to `reports/YYYY-MM-DD/`. `chief_of_staff.py` runs last and aggregates every
+agent's card into a daily roundup. When adding a new squad or generator, add its persona to
+`AGENT_PROFILES` and have it render a report card — don't hardcode names inline.
 
 ---
 

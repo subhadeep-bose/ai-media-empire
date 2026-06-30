@@ -50,6 +50,25 @@
 
 ---
 
+## Named Agents
+
+Each squad runs under a named persona (Indian cricketers) and files a dark-themed HTML
+report card to `reports/YYYY-MM-DD/` every run, summarised by a Chief of Staff roundup card:
+
+| Agent | Role |
+|---|---|
+| MS Dhoni | Chief of Staff — daily roundup |
+| Virat Kohli | Intel Scout — Squad 1 |
+| R Ashwin | Newsletter Strategist — Squad 2 |
+| Rohit Sharma | Thread Opener — Squad 2 |
+| Jasprit Bumrah | Reel Scriptwriter — Squad 2 |
+| Rahul Dravid | Production Chief — Squad 3 |
+| Ravindra Jadeja | Analytics All-Rounder — Squad 6 |
+
+Report cards are included in the `daily-content-*` Actions artifact alongside scripts and media.
+
+---
+
 ## Features
 
 - **9 scrapers** — GitHub Trending, arXiv CS.AI, Reddit r/artificial, Reddit r/soccer, Reddit r/movies, Reddit r/SteamDeck, ESPNcricinfo, WrestlingInc, Goodreads Bengali shelf
@@ -114,7 +133,10 @@ review and approve before posting manually.
 ai-media-empire/
 ├── config.py                  # All constants and paths (single source of truth)
 ├── llm.py                     # Shared Ollama + Groq LLM module
-├── main.py                    # Legacy entry point (calls both squads)
+├── main.py                    # Pipeline orchestrator (Squad1 -> Squad2 -> Squad3 -> Squad6 -> Chief of Staff)
+├── chief_of_staff.py          # Aggregates each agent's report card into a daily roundup
+├── reports/
+│   └── report_card.py         # Shared HTML report-card renderer for named agents
 │
 ├── squad1_intel/
 │   ├── scrapers.py            # 9 source scrapers with dedup + rate limiting

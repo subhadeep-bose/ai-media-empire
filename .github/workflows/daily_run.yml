@@ -51,6 +51,9 @@ jobs:
       - name: Run Squad 6 — Analytics feedback loop
         run: python squad6_analytics/analytics_run.py
 
+      - name: Run Chief of Staff — daily roundup
+        run: python chief_of_staff.py
+
       - name: Run tests
         run: pytest tests/ -v
 
@@ -62,6 +65,7 @@ jobs:
             master_intel_digest.md
             squad2_output/**
             squad3_output/**
+            reports/**
           retention-days: 7
 
       - name: Commit seen_items.json and analytics state

@@ -148,6 +148,17 @@ FFmpeg must also be installed and on `PATH` for Squad 3's video assembly step.
 7. Trigger manually from the **Actions** tab → **Daily media empire run** → **Run workflow**
 
 Pull requests are checked by a separate `lint.yml` workflow: conventional-commit linting, `ruff check .`, and `pytest tests/ -v`.
+(The `ruff` job is advisory only for now — it doesn't block merges — since there's pre-existing lint debt on `main` it isn't gating yet.)
+
+### Other workflows
+
+- **`dependabot.yml`** — weekly PRs bumping pip and GitHub Actions dependencies.
+- **`api_health_check.yml`** — runs weekly (and on demand), pinging Groq/Pexels/Telegram with each configured
+  secret and opening a `api-health`-labelled issue if any comes back non-200, so an expired key is caught
+  before it silently breaks the next daily run.
+- **`manual_retry.yml`** — `workflow_dispatch` with a `squad` choice input to re-run a single failed stage
+  (e.g. just Squad 3) without redoing the whole day. Always runs against "today" — the squad scripts don't
+  support a date override, so this isn't for backfilling a past date.
 
 ---
 

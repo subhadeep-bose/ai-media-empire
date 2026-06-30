@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT
+from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS
 from llm import call_llm
 from reports.report_card import render_report_card
 
@@ -260,8 +260,6 @@ REEL_NAMES = {
     "Instagram Reel (AI/Tech)", "Instagram Reel (Sports)", "Instagram Reel (Bengali Books)",
     "Instagram Reel (Movies)", "Instagram Reel (Gaming)",
 }
-SKIP_MARKERS = ("NO SPORTS CONTENT TODAY", "NO GAMING CONTENT TODAY",
-                "NO BENGALI BOOK CONTENT TODAY", "NO MOVIES CONTENT TODAY")
 
 
 def _script_status(content: str) -> str:

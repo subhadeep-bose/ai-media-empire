@@ -17,6 +17,16 @@ RATE_LIMIT_SECS = 2
 ITEMS_PER_SOURCE = 5
 SUMMARY_MAX_CHARS = 150
 
+# Squad 2 generators write one of these exact strings when a niche has no
+# real content today; Squad 3 reads the same list to decide what to skip.
+SKIP_MARKERS = (
+    "NO SPORTS CONTENT TODAY",
+    "NO GAMING CONTENT TODAY",
+    "NO BENGALI BOOK CONTENT TODAY",
+    "NO MOVIES CONTENT TODAY",
+    "[ERROR]",
+)
+
 # Paths
 SEEN_ITEMS_PATH = REPO_ROOT / "seen_items.json"
 DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"

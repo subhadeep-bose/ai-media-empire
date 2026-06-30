@@ -55,6 +55,16 @@ NICHE_BOOST_MULTIPLIER = 2            # scrape this many times ITEMS_PER_SOURCE 
 # that produces a per-run HTML report card (see reports/report_card.py).
 REPORTS_DIR = REPO_ROOT / "reports"
 
+# Notifications — daily roundup GitHub Issue + approval email
+GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+ROUNDUP_ISSUE_LABEL = "daily-roundup"
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+NOTIFY_EMAIL_TO = os.getenv("NOTIFY_EMAIL_TO", "")
+
 AGENT_PROFILES = {
     "chief_of_staff":    {"name": "MS Dhoni",        "role": "Chief of Staff"},
     "squad1_intel":      {"name": "Virat Kohli",      "role": "Intel Scout — Squad 1"},

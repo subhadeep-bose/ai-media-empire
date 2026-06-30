@@ -54,6 +54,16 @@ jobs:
       - name: Run Chief of Staff — daily roundup
         run: python chief_of_staff.py
 
+      - name: Notify — roundup issue + approval email
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+        run: python notify.py
+
       - name: Run tests
         run: pytest tests/ -v
 

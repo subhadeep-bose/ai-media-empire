@@ -51,7 +51,7 @@ jobs:
           cache: 'pip'
 
       - name: Install deps
-        run: pip install requests beautifulsoup4 python-dotenv lxml pytest
+        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts
 
       - name: Run tests
         run: pytest tests/ -v

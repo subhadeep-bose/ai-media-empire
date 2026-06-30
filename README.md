@@ -31,12 +31,25 @@
               │     SQUAD 2 — Content    │
               │  7 generators (parallel) │
               │  Newsletter · Thread     │
-              │  6 × Reel scripts        │
+              │  5 × Reel scripts        │
               └────────────┬────────────┘
                            │ bundle_YYYY-MM-DD.json
               ┌────────────▼────────────┐
-              │   Approval Email Draft   │
-              │  squad2_output/YYYY-MM-DD│
+              │  SQUAD 3 — Multimedia    │
+              │  Edge-TTS voice + SRT    │
+              │  Stock clips + FFmpeg    │
+              │  YouTube/IG metadata     │
+              └────────────┬────────────┘
+                           │ squad3_output/YYYY-MM-DD
+              ┌────────────▼────────────┐
+              │  SQUAD 6 — Analytics     │
+              │  Skip-streak tracking    │
+              │  niche_boosts.json       │
+              └────────────┬────────────┘
+                           │
+              ┌────────────▼────────────┐
+              │   Chief of Staff Roundup │
+              │  reports/YYYY-MM-DD      │
               └────────────┬────────────┘
                            │
               ┌────────────▼────────────┐
@@ -45,8 +58,11 @@
               └─────────────────────────┘
                            │
                     Manual Post
-              (Instagram · Twitter · Beehiiv)
+              (Instagram · Twitter · Beehiiv · YouTube)
 ```
+
+`niche_boosts.json` feeds back into Squad 1's next run, scraping more aggressively for niches
+that have gone quiet — closing the loop without manual tuning.
 
 ---
 
@@ -79,6 +95,10 @@ Report cards are included in the `daily-content-*` Actions artifact alongside sc
 - **Parallel generation** — `ThreadPoolExecutor(max_workers=3)` for Squad 2 to respect API TPM limits
 - **File locking** — `fcntl.flock` on Linux to prevent concurrent write corruption of `seen_items.json`
 - **Hallucination guards** — sports and Bengali book scripts include strict "ONLY use facts from the digest" rules
+- **Multimedia production** — Edge-TTS voiceover + SRT captions + Pexels stock clips assembled into vertical video via FFmpeg, plus YouTube/Instagram metadata generation
+- **Self-healing orchestration** — `main.py` retries a failed squad with incremental backoff before giving up; TTS synthesis itself retries on transient `edge-tts` failures
+- **Analytics feedback loop** — Squad 6 tracks consecutive skip streaks per niche and boosts next-run scrape volume for niches that have gone quiet
+- **Named agents + report cards** — every squad files a per-run HTML report card under a named persona, rolled up into a daily Chief of Staff summary
 
 ---
 
@@ -90,22 +110,30 @@ git clone https://github.com/subhadeep-bose/ai-media-empire
 cd ai-media-empire
 
 # 2. Install dependencies
-pip install requests beautifulsoup4 python-dotenv lxml pytest
+pip install -r requirements.txt
+pip install pytest ruff  # dev-only, not needed at runtime
 
 # 3. Optional: start local Ollama (falls back to Groq if unavailable)
 ollama pull llama3:8b
 ollama serve
 
-# 4. Set environment variable (or add to .env)
+# 4. Set environment variables (or add to .env)
 export GROQ_API_KEY=your_key_here
+export PEXELS_API_KEY=your_key_here  # optional — enables Squad 3 video assembly
 
-# 5. Run the full pipeline
+# 5. Run the full pipeline (or run main.py to chain all squads with retries)
 python squad1_intel/squad1_run.py
 python squad2_content/squad2_run.py
+python squad3_production/squad3_run.py
+python squad6_analytics/analytics_run.py
+python chief_of_staff.py
 
-# 6. Run tests
+# 6. Run tests and lint
 pytest tests/ -v
+ruff check .
 ```
+
+FFmpeg must also be installed and on `PATH` for Squad 3's video assembly step.
 
 ---
 
@@ -114,8 +142,11 @@ pytest tests/ -v
 1. Fork or push this repo to GitHub
 2. Go to **Settings → Secrets and variables → Actions**
 3. Add the secret: `GROQ_API_KEY` (from [console.groq.com](https://console.groq.com) — free tier)
-4. The pipeline runs automatically at **06:00 UTC** every day
-5. Trigger manually from the **Actions** tab → **Daily media empire run** → **Run workflow**
+4. Optional: add `PEXELS_API_KEY` (from [pexels.com/api](https://www.pexels.com/api/)) to enable Squad 3's stock-footage video assembly — without it, Squad 3 still produces audio, captions, and metadata, just no assembled `.mp4`
+5. The pipeline runs automatically at **06:00 UTC** every day
+6. Trigger manually from the **Actions** tab → **Daily media empire run** → **Run workflow**
+
+Pull requests are checked by a separate `lint.yml` workflow: conventional-commit linting, `ruff check .`, and `pytest tests/ -v`.
 
 ---
 
@@ -149,16 +180,44 @@ ai-media-empire/
 │   ├── bundle_YYYY-MM-DD.json # Full content bundle per day
 │   └── YYYY-MM-DD/            # Individual script files + approval email
 │
+├── squad3_production/
+│   ├── squad3_run.py          # Squad 3 orchestrator
+│   ├── tts.py                 # Edge-TTS voiceover + SRT captions (retries on transient failures)
+│   ├── visuals.py             # Pexels stock-clip fetcher
+│   ├── video.py                # FFmpeg assembly of voiceover + captions + clips
+│   └── metadata.py            # YouTube/Instagram metadata generation
+│
+├── squad3_output/
+│   └── YYYY-MM-DD/<niche>/    # audio.mp3, captions.srt, video.mp4, youtube_meta.json, instagram_caption.txt
+│
+├── squad6_analytics/
+│   └── analytics_run.py       # Tracks per-niche skip streaks, writes niche_boosts.json
+│
 ├── tests/
 │   ├── __init__.py
 │   ├── test_scrapers.py       # Unit tests for dedup, truncation, error format
-│   └── test_llm.py            # Unit tests for Groq retry, fallback, error handling
+│   ├── test_llm.py            # Unit tests for Groq retry, fallback, error handling
+│   ├── test_squad2.py         # Niche-section extraction and reel-generator tests
+│   ├── test_squad3.py         # TTS, captions, metadata tests
+│   ├── test_squad3_video.py   # Stock-clip fetch + FFmpeg assembly tests
+│   ├── test_analytics.py      # Skip-streak tracking tests
+│   ├── test_chief_of_staff.py # Report-card roundup aggregation tests
+│   ├── test_report_card.py    # HTML report-card renderer tests
+│   └── test_main_resilience.py# Squad retry/backoff orchestration tests
 │
-├── .github/workflows/
-│   └── daily_run.yml          # Main pipeline (scrape → generate → test → upload artifact)
+├── .github/
+│   ├── workflows/
+│   │   ├── daily_run.yml      # Main pipeline (scrape → generate → produce → test → upload artifact)
+│   │   └── lint.yml           # Conventional commits, ruff, pytest on every PR
+│   ├── copilot-instructions.md
+│   └── pull_request_template.md
 │
+├── ruff.toml                  # Lint config (line length, ignored rules)
+├── commitlint.config.js       # Conventional-commit type/scope rules
 ├── seen_items.json            # Dedup index (committed back after each run)
 ├── master_intel_digest.md     # LLM-processed intel digest (Squad 1 output)
+├── analytics_history.json     # Squad 6 — per-niche skip-streak history
+├── niche_boosts.json          # Squad 6 — niches Squad 1 should scrape harder next run
 ├── requirements.txt
 └── .env                       # Local secrets (never committed)
 ```
@@ -173,6 +232,7 @@ ai-media-empire/
 |---|---|---|
 | `GROQ_API_KEY` | Yes (if no Ollama) | Groq API key from console.groq.com |
 | `OLLAMA_MODEL` | No | Ollama model name (default: `llama3:8b`) |
+| `PEXELS_API_KEY` | No | Enables Squad 3 stock-footage video assembly; without it, video assembly is skipped |
 
 ### config.py Settings
 
@@ -187,6 +247,15 @@ ai-media-empire/
 | `RATE_LIMIT_SECS` | `2` | Sleep between scraper requests |
 | `ITEMS_PER_SOURCE` | `5` | Max items fetched per scraper |
 | `SUMMARY_MAX_CHARS` | `150` | Max chars for item summaries |
+| `SKIP_MARKERS` | see `config.py` | Sentinel strings Squad 2 writes (and Squad 3 reads) when a niche has no real content |
+| `VIDEO_WIDTH` / `VIDEO_HEIGHT` | `1080` / `1920` | Output video resolution (portrait/Reels) |
+| `STOCK_CLIPS_PER_REEL` | `3` | Stock clips fetched per assembled video |
+| `SQUAD_RETRY_ATTEMPTS` | `2` | Extra retries per squad in `main.py` before giving up |
+| `SQUAD_RETRY_WAIT_BASE_SECS` | `30` | Backoff base (seconds) between squad retries |
+| `SQUAD_TIMEOUT_SECS` | `600` | Max seconds a squad subprocess may run |
+| `ANALYTICS_SKIP_STREAK_THRESHOLD` | `3` | Consecutive skips before Squad 6 boosts scrape volume |
+| `NICHE_BOOST_MULTIPLIER` | `2` | Scrape multiplier applied to boosted niches |
+| `AGENT_PROFILES` | see `config.py` | Named-persona → role mapping used by report cards |
 
 ---
 

@@ -3,10 +3,8 @@ Unit tests for squad1_intel/scrapers.py
 """
 
 import sys
-import json
-import pytest
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Ensure repo root is on sys.path
 REPO_ROOT = Path(__file__).parent.parent

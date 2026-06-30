@@ -39,6 +39,23 @@ jobs:
       - name: Lint PR title
         run: echo "${{ github.event.pull_request.title }}" | npx commitlint --verbose
 
+  ruff:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff
+        run: ruff check .
+
   pytest:
     name: Tests
     runs-on: ubuntu-latest

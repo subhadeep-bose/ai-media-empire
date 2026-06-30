@@ -1,0 +1,11 @@
+target-version = "py311"
+line-length = 110
+
+[lint]
+select = ["E", "F", "W"]
+# Every squad script does sys.path.insert(...) then imports — module-level
+# imports after that line are intentional, not a real ordering bug.
+# E501 (line-too-long) is pre-existing drift across many files (mostly long
+# prompt strings and mock call lines); the 110 limit stays as a soft target
+# rather than a hard CI gate to avoid unrelated churn in this PR.
+ignore = ["E402", "E501"]

@@ -69,12 +69,19 @@ def extract_niche_section(digest: str, keywords: list) -> str:
 
 # ── Script generators ─────────────────────────────────────────────────────
 
+AI_TECH_KEYWORDS = ["AI/Tech"]
+
+
 def write_newsletter(digest: str) -> str:
+    ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
+    if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+
     return call_llm(f"""
 You are a sharp AI/tech newsletter editor. Write a weekly newsletter issue.
 
-Source digest:
-{digest}
+AI/Tech section of today's digest (the ONLY content you may use):
+{ai_tech_context}
 
 FORMAT:
 - Subject line (punchy, under 50 chars)
@@ -83,17 +90,25 @@ FORMAT:
 - Closing thought (1 sentence opinion)
 - CTA: "Reply and tell me which story surprised you most."
 
+CRITICAL RULES:
+- ONLY use stories from the AI/Tech section above.
+- NEVER pull in or pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
+
 Tone: smart friend explaining tech over coffee. Contractions OK. Not corporate.
 Output ONLY the newsletter. No preamble.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
 def write_twitter_thread(digest: str) -> str:
+    ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
+    if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+
     return call_llm(f"""
 You are a viral Twitter/X tech writer. Write a 6-tweet thread from this digest.
 
-Source digest:
-{digest}
+AI/Tech section of today's digest (the ONLY content you may use):
+{ai_tech_context}
 
 FORMAT:
 Tweet 1: Hook starting with "{hook()}" — must create curiosity gap, under 250 chars
@@ -103,6 +118,7 @@ Tweet 6: CTA — "Follow for daily AI drops" or similar
 Rules:
 - No hashtags (they hurt reach).
 - Each tweet must stand alone AND flow as a thread.
+- ONLY use stories from the AI/Tech section above — never pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
 - NEVER invent statistics, numbers, or data not present in the source digest.
 - Only use facts directly from the digest — no embellishment.
 Output ONLY the tweets separated by ---
@@ -110,17 +126,25 @@ Output ONLY the tweets separated by ---
 
 
 def write_reel_ai(digest: str) -> str:
+    ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
+    if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+
     return call_llm(f"""
 Write a 45-second Instagram Reel script for an AI/Tech account.
 
-Source digest:
-{digest}
+AI/Tech section of today's digest (the ONLY content you may use):
+{ai_tech_context}
 
 FORMAT:
 [HOOK 0-3s]: One sentence. Start with "{hook()}". Stop-scroll energy.
 [CONTEXT 3-15s]: 2-3 sentences. What is this, why now?
 [THE MEAT 15-35s]: 3 key points, each one punchy sentence.
 [CTA 35-45s]: "Follow for daily AI news that actually matters."
+
+CRITICAL RULES:
+- ONLY use stories from the AI/Tech section above.
+- NEVER pull in or pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
 
 Tone: energetic, clear, no jargon. Spoken words, not text.
 Output ONLY the script with timestamps. No preamble.

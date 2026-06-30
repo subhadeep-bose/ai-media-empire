@@ -11,11 +11,10 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 
-from config import SQUAD_RETRY_ATTEMPTS, SQUAD_RETRY_WAIT_BASE_SECS, SQUAD_TIMEOUT_SECS
+from config import LOG_DIR, SQUAD_RETRY_ATTEMPTS, SQUAD_RETRY_WAIT_BASE_SECS, SQUAD_TIMEOUT_SECS
 
 load_dotenv()
 
-LOG_DIR = Path("logs")
 LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / f"run_{datetime.now().strftime('%Y%m%d_%H%M')}.log"
 

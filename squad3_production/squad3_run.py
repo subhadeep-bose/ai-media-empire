@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config import OUTPUT_DIR, REPO_ROOT
+from config import OUTPUT_DIR, REPO_ROOT, SKIP_MARKERS
 from tts import generate_audio, generate_srt
 from metadata import generate_youtube_metadata, generate_instagram_caption
 from visuals import fetch_stock_clips
@@ -44,10 +44,6 @@ NICHE_MAP = {
     "Instagram Reel (Movies)":        ("movies",        True),
     "Instagram Reel (Gaming)":        ("gaming",        True),
 }
-
-SKIP_MARKERS = ["NO SPORTS CONTENT TODAY", "NO GAMING CONTENT TODAY",
-                 "NO BENGALI BOOK CONTENT TODAY", "NO MOVIES CONTENT TODAY", "[ERROR]"]
-
 
 def _should_skip(content: str) -> bool:
     return any(marker in content for marker in SKIP_MARKERS)

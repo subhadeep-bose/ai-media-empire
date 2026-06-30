@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts
 
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Verify ffmpeg is available
         run: ffmpeg -version && ffprobe -version
 

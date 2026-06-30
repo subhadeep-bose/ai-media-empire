@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
       pages: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +49,9 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python squad3_production/squad3_run.py
 
+      - name: Run Squad 6 — Analytics feedback loop
+        run: python squad6_analytics/analytics_run.py
+
       - name: Run tests
         run: pytest tests/ -v
 
@@ -64,15 +68,42 @@ jobs:
             squad3_output/**
           retention-days: 7
 
-      - name: Commit seen_items.json and docs
+      - name: Commit seen_items.json, analytics state, and docs
         run: |
           git config user.name "media-empire-bot"
           git config user.email "bot@noreply.com"
-          git add -f seen_items.json docs/index.html || true
+          git add -f seen_items.json analytics_history.json niche_boosts.json docs/index.html || true
           git diff --staged --quiet || git commit -m "chore: daily run $(date +%Y-%m-%d)"
           for i in 1 2 3 4; do git push && break || sleep $((i * 4)); done
 
-      - name: Notify on failure
+      - name: Alert on failure
         if: failure()
-        run: |
-          echo "Pipeline failed on $(date). Check: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const today = new Date().toISOString().slice(0, 10);
+            const title = `Daily pipeline failed — ${today}`;
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'pipeline-failure',
+              state: 'open',
+            });
+            const alreadyOpen = existing.find(issue => issue.title === title);
+            if (alreadyOpen) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: alreadyOpen.number,
+                body: `Failed again on a re-run: ${runUrl}`,
+              });
+              return;
+            }
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body: `The daily media empire pipeline failed after retries.\n\nRun: ${runUrl}`,
+              labels: ['pipeline-failure'],
+            });

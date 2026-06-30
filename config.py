@@ -29,3 +29,14 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
 STOCK_CLIPS_PER_REEL = 3
+
+# Squad 5 — infra resilience
+SQUAD_RETRY_ATTEMPTS = 2          # extra attempts after the first failure
+SQUAD_RETRY_WAIT_BASE_SECS = 30   # backoff = base * attempt_number
+SQUAD_TIMEOUT_SECS = 600
+
+# Squad 6 — analytics feedback loop
+ANALYTICS_HISTORY_PATH = REPO_ROOT / "analytics_history.json"
+NICHE_BOOST_PATH = REPO_ROOT / "niche_boosts.json"
+ANALYTICS_SKIP_STREAK_THRESHOLD = 3   # consecutive skips before boosting scrape volume
+NICHE_BOOST_MULTIPLIER = 2            # scrape this many times ITEMS_PER_SOURCE when boosted

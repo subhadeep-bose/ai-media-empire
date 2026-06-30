@@ -156,6 +156,11 @@ def main():
     log.info("Output dir:       %s", SQUAD3_OUTPUT / date_str)
     log.info("=" * 55)
 
+    # Persist per-niche outcomes for Squad 6 (Analytics) to read.
+    results_path = SQUAD3_OUTPUT / date_str / "_results.json"
+    results_path.parent.mkdir(parents=True, exist_ok=True)
+    results_path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+
     error_count = sum(1 for r in results.values() if r.get("error"))
     if error_count > 2:
         log.error("%d niches failed — check logs", error_count)

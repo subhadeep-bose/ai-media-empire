@@ -189,7 +189,7 @@ ai-media-empire/
 | Squad 2 — Content | ✅ Live | 7 parallel script generators |
 | Squad 3 — Multimedia | ✅ Live | Edge-TTS voice + FFmpeg video assembly |
 | Squad 4 — Monetise | 🔜 Phase 4 | Affiliate links + sponsor outreach |
-| Squad 5 — Infra | 🔜 Phase 3 | Self-healing, alerting, retry orchestration |
+| Squad 5 — Infra | ✅ Live | Self-healing, alerting, retry orchestration |
 | Squad 6 — Analytics | 🔜 Phase 3 | Performance feedback loop into Squad 1 |
 | Squad 7 — Audience | 🔜 Phase 4 | Subscriber segmentation and personalisation |
 | Squad 8 — Brand | 🔜 Phase 5 | Copyright checking + tone enforcement |

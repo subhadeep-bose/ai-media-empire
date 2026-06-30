@@ -6,10 +6,12 @@ Run this daily via GitHub Actions or local cron.
 
 import subprocess
 import sys
-import os
+import time
 from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
+
+from config import SQUAD_RETRY_ATTEMPTS, SQUAD_RETRY_WAIT_BASE_SECS, SQUAD_TIMEOUT_SECS
 
 load_dotenv()
 
@@ -26,25 +28,47 @@ def log(msg: str):
         f.write(line + "\n")
 
 
-def run_squad(script_path: str, name: str) -> bool:
-    log(f"Starting {name}...")
+def _run_once(script_path: str, name: str) -> tuple:
     try:
         result = subprocess.run(
             [sys.executable, script_path],
-            capture_output=True, text=True, timeout=600
+            capture_output=True, text=True, timeout=SQUAD_TIMEOUT_SECS,
         )
         if result.returncode == 0:
-            log(f"{name} completed OK")
-            return True
-        else:
-            log(f"{name} FAILED: {result.stderr[:300]}")
-            return False
+            return True, ""
+        return False, f"exit code {result.returncode}: {result.stderr[-300:]}"
     except subprocess.TimeoutExpired:
-        log(f"{name} TIMED OUT after 10 minutes")
-        return False
+        return False, f"timed out after {SQUAD_TIMEOUT_SECS}s"
     except Exception as e:
-        log(f"{name} ERROR: {e}")
-        return False
+        return False, str(e)
+
+
+def run_squad(script_path: str, name: str) -> bool:
+    """
+    Self-healing: retries a failed squad up to SQUAD_RETRY_ATTEMPTS times with
+    incremental backoff before declaring it failed. Most failures in this
+    pipeline are transient (LLM rate limits, flaky scraper endpoints), so a
+    short retry window recovers a large fraction of runs without intervention.
+    """
+    log(f"Starting {name}...")
+    attempts = SQUAD_RETRY_ATTEMPTS + 1
+    for attempt in range(1, attempts + 1):
+        ok, error = _run_once(script_path, name)
+        if ok:
+            if attempt > 1:
+                log(f"{name} recovered on attempt {attempt}/{attempts}")
+            else:
+                log(f"{name} completed OK")
+            return True
+
+        log(f"{name} FAILED (attempt {attempt}/{attempts}): {error}")
+        if attempt < attempts:
+            wait = SQUAD_RETRY_WAIT_BASE_SECS * attempt
+            log(f"Retrying {name} in {wait}s...")
+            time.sleep(wait)
+
+    log(f"{name} exhausted all {attempts} attempts — giving up.")
+    return False
 
 
 def send_gmail_approval(date_str: str):

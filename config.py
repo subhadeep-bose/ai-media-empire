@@ -29,3 +29,8 @@ PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
 STOCK_CLIPS_PER_REEL = 3
+
+# Squad 5 — infra resilience
+SQUAD_RETRY_ATTEMPTS = 2          # extra attempts after the first failure
+SQUAD_RETRY_WAIT_BASE_SECS = 30   # backoff = base * attempt_number
+SQUAD_TIMEOUT_SECS = 600

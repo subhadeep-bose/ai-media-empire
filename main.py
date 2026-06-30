@@ -1,6 +1,7 @@
 """
 main.py — Master Controller
-Chains: Squad 1 (Intel) → Squad 2 (Content) → Squad 3 (Multimedia) → approval email
+Chains: Squad 1 (Intel) → Squad 2 (Content) → Squad 3 (Multimedia) → Squad 6
+(Analytics) → Chief of Staff (Roundup) → Notify (GitHub Issue + approval email)
 Run this daily via GitHub Actions or local cron.
 """
 
@@ -8,9 +9,9 @@ import subprocess
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
 from dotenv import load_dotenv
 
+import notify
 from config import LOG_DIR, SQUAD_RETRY_ATTEMPTS, SQUAD_RETRY_WAIT_BASE_SECS, SQUAD_TIMEOUT_SECS
 
 load_dotenv()
@@ -70,20 +71,6 @@ def run_squad(script_path: str, name: str) -> bool:
     return False
 
 
-def send_gmail_approval(date_str: str):
-    """
-    Uses Gmail MCP (already connected) to send approval email to yourself.
-    In practice: copy the draft from squad2_output/{date}/00_approval_email_draft.txt
-    and paste into a Gmail draft, or use the Gmail MCP tool in Claude.ai directly.
-    """
-    draft_path = Path(f"squad2_output/{date_str}/00_approval_email_draft.txt")
-    if draft_path.exists():
-        log(f"Approval email draft ready at: {draft_path}")
-        log("ACTION NEEDED: Open Claude.ai, use Gmail MCP to send this draft to yourself")
-    else:
-        log("No approval email draft found — check Squad 2 output")
-
-
 def main():
     date_str = datetime.now().strftime("%Y-%m-%d")
     log("=" * 50)
@@ -114,8 +101,8 @@ def main():
     # Step 5: Chief of Staff rounds up every agent's report card for today
     run_squad("chief_of_staff.py", "Chief of Staff (Roundup)")
 
-    # Step 6: Notify for approval
-    send_gmail_approval(date_str)
+    # Step 6: Notify — GitHub Issue roundup + approval email (each optional, best-effort)
+    notify.notify_all(date_str)
 
     log("=" * 50)
     log("DAILY RUN COMPLETE")

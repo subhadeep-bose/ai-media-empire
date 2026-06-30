@@ -143,8 +143,9 @@ FFmpeg must also be installed and on `PATH` for Squad 3's video assembly step.
 2. Go to **Settings → Secrets and variables → Actions**
 3. Add the secret: `GROQ_API_KEY` (from [console.groq.com](https://console.groq.com) — free tier)
 4. Optional: add `PEXELS_API_KEY` (from [pexels.com/api](https://www.pexels.com/api/)) to enable Squad 3's stock-footage video assembly — without it, Squad 3 still produces audio, captions, and metadata, just no assembled `.mp4`
-5. The pipeline runs automatically at **06:00 UTC** every day
-6. Trigger manually from the **Actions** tab → **Daily media empire run** → **Run workflow**
+5. Optional: add `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `NOTIFY_EMAIL_TO` to enable the daily approval email (see [Daily notifications](#daily-notifications) below) — `GITHUB_TOKEN` is provided automatically, no secret needed for the GitHub Issue roundup
+6. The pipeline runs automatically at **06:00 UTC** every day
+7. Trigger manually from the **Actions** tab → **Daily media empire run** → **Run workflow**
 
 Pull requests are checked by a separate `lint.yml` workflow: conventional-commit linting, `ruff check .`, and `pytest tests/ -v`.
 
@@ -156,6 +157,23 @@ Each scheduled run uploads its full output (digest, scripts, audio, video, capti
 `daily-content-<run_id>` artifact on the **Actions** tab (retained 7 days) — download it from there to
 review and approve before posting manually.
 
+### Daily notifications
+
+`notify.py` runs after the Chief of Staff roundup and surfaces it through two best-effort,
+independently optional channels — missing credentials for one just logs a warning and skips it,
+the other still runs:
+
+- **GitHub Issue** — opens (or comments on, if already open) a `daily-roundup`-labelled issue
+  with the day's summary and a link to the Actions run. Uses the automatically-provided
+  `GITHUB_TOKEN`, no extra secret needed.
+- **Approval email** — emails the Squad 2 approval draft plus the roundup summary via SMTP.
+  Needs `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `NOTIFY_EMAIL_TO` as repo
+  secrets (for Gmail: an [app password](https://myaccount.google.com/apppasswords), not your
+  account password).
+
+A separate, pre-existing `Alert on failure` step in `daily_run.yml` opens a `pipeline-failure`-labelled
+issue if the run fails outright, independent of `notify.py`.
+
 ---
 
 ## Project Structure
@@ -166,6 +184,7 @@ ai-media-empire/
 ├── llm.py                     # Shared Ollama + Groq LLM module
 ├── main.py                    # Pipeline orchestrator (Squad1 -> Squad2 -> Squad3 -> Squad6 -> Chief of Staff)
 ├── chief_of_staff.py          # Aggregates each agent's report card into a daily roundup
+├── notify.py                  # Posts the roundup as a GitHub Issue + sends the approval email
 ├── reports/
 │   └── report_card.py         # Shared HTML report-card renderer for named agents
 │
@@ -202,6 +221,7 @@ ai-media-empire/
 │   ├── test_squad3_video.py   # Stock-clip fetch + FFmpeg assembly tests
 │   ├── test_analytics.py      # Skip-streak tracking tests
 │   ├── test_chief_of_staff.py # Report-card roundup aggregation tests
+│   ├── test_notify.py         # GitHub Issue + approval email notification tests
 │   ├── test_report_card.py    # HTML report-card renderer tests
 │   └── test_main_resilience.py# Squad retry/backoff orchestration tests
 │
@@ -233,6 +253,8 @@ ai-media-empire/
 | `GROQ_API_KEY` | Yes (if no Ollama) | Groq API key from console.groq.com |
 | `OLLAMA_MODEL` | No | Ollama model name (default: `llama3:8b`) |
 | `PEXELS_API_KEY` | No | Enables Squad 3 stock-footage video assembly; without it, video assembly is skipped |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `NOTIFY_EMAIL_TO` | No | Enables the daily approval email from `notify.py`; without all five, the email is skipped |
+| `GITHUB_TOKEN` | No (auto-set in Actions) | Enables the daily roundup GitHub Issue from `notify.py`; without it, the issue post is skipped |
 
 ### config.py Settings
 

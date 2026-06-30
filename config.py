@@ -22,7 +22,6 @@ SEEN_ITEMS_PATH = REPO_ROOT / "seen_items.json"
 DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
 OUTPUT_DIR = REPO_ROOT / "squad2_output"
 LOG_DIR = REPO_ROOT / "logs"
-DOCS_DIR = REPO_ROOT / "docs"
 
 # Squad 3 — video assembly
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")

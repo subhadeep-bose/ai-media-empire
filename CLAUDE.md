@@ -65,19 +65,19 @@ chore(deps): bump requests to 2.32.0
 config.py               # All magic numbers, paths, model names — edit here first
 llm.py                  # Shared Ollama→Groq LLM module — single source of truth
 main.py                 # Pipeline orchestrator: Squad1 → Squad2
-generate_site.py        # Builds docs/index.html dashboard from latest bundle
 squad1_intel/
   scrapers.py           # 9 scrapers — each returns List[dict] or [{"error": ...}]
   squad1_run.py         # Orchestrates scrapers → LLM digest
 squad2_content/
   squad2_run.py         # Parallel LLM content generation (ThreadPoolExecutor)
 tests/                  # pytest — run before every commit
-docs/                   # GitHub Pages static site — auto-generated, don't edit manually
 .github/workflows/
-  daily_run.yml         # Scheduled pipeline + artifact upload
-  pages.yml             # GitHub Pages deployment
+  daily_run.yml         # Scheduled pipeline + artifact upload (daily-content-*)
   lint.yml              # Commitlint + PR checks
 ```
+
+Repo is private — no GitHub Pages (requires GitHub Enterprise on private repos). Review daily
+output via the `daily-content-*` artifact on each Actions run instead of a hosted dashboard.
 
 ---
 

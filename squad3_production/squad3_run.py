@@ -23,6 +23,7 @@ from tts import generate_audio, generate_srt
 from metadata import generate_youtube_metadata, generate_instagram_caption
 from visuals import fetch_stock_clips
 from video import assemble_video
+from reports.report_card import render_report_card
 
 logging.basicConfig(
     level=logging.INFO,
@@ -162,6 +163,18 @@ def main():
     results_path.write_text(json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
 
     error_count = sum(1 for r in results.values() if r.get("error"))
+
+    render_report_card(
+        "squad3_production", date_str,
+        stats={"Audio": audio_count, "Video": video_count, "Metadata": meta_count,
+               "Skipped": skip_count, "Errors": error_count},
+        items=[{"tag": name.split(" (")[-1].rstrip(")") if "(" in name else name,
+                "text": "skipped" if r.get("skipped") else ("error" if r.get("error") else "produced")}
+               for name, r in results.items()],
+        note=f"{video_count} videos and {audio_count} voiceovers assembled for {date_str}."
+             if video_count or audio_count else "No multimedia produced today — check upstream scripts.",
+    )
+
     if error_count > 2:
         log.error("%d niches failed — check logs", error_count)
         sys.exit(1)

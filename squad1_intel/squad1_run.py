@@ -38,6 +38,7 @@ from scrapers import (
     scrape_bengali_goodreads, fetch_cricket_news, fetch_soccer_trends,
     fetch_wwe_news, fetch_movie_trends, fetch_gaming_trends,
 )
+from reports.report_card import render_report_card
 
 
 def load_boosted_niches() -> set:
@@ -137,6 +138,21 @@ def main():
     log.info("Digest saved to %s", DIGEST_PATH)
     log.info("%d total items in dedup index", len(seen))
     log.info("DIGEST PREVIEW (first 500 chars): %s ...", digest[:500])
+
+    render_report_card(
+        "squad1_intel",
+        datetime.now().strftime("%Y-%m-%d"),
+        stats={
+            "Items Collected": len(good_items),
+            "Scraper Errors": len(error_items),
+            "Dedup Index": len(seen),
+            "Boosted Niches": len(boosted_niches),
+        },
+        items=[{"tag": e.get("platform", "?"), "text": e.get("error", "")} for e in error_items[:5]]
+              or [{"tag": "ok", "text": f"{len(good_items)} fresh items sent to the digest"}],
+        note="Boosted scrape volume for: " + ", ".join(sorted(boosted_niches))
+             if boosted_niches else "All niches scraping at normal volume today.",
+    )
 
 
 if __name__ == "__main__":

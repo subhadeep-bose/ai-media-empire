@@ -112,7 +112,10 @@ def main():
     # Step 4: Analytics feedback loop (updates niche_boosts.json for tomorrow's Squad 1)
     run_squad("squad6_analytics/analytics_run.py", "Squad 6 (Analytics)")
 
-    # Step 5: Notify for approval
+    # Step 5: Chief of Staff rounds up every agent's report card for today
+    run_squad("chief_of_staff.py", "Chief of Staff (Roundup)")
+
+    # Step 6: Notify for approval
     send_gmail_approval(date_str)
 
     log("=" * 50)

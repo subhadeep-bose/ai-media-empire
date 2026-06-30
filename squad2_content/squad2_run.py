@@ -25,6 +25,7 @@ log = logging.getLogger(__name__)
 
 from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT
 from llm import call_llm
+from reports.report_card import render_report_card
 
 OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -253,6 +254,59 @@ def build_approval_email(scripts: dict, date_str: str) -> str:
     return "\n".join(lines)
 
 
+# ── Report cards ────────────────────────────────────────────────────────────
+
+REEL_NAMES = {
+    "Instagram Reel (AI/Tech)", "Instagram Reel (Sports)", "Instagram Reel (Bengali Books)",
+    "Instagram Reel (Movies)", "Instagram Reel (Gaming)",
+}
+SKIP_MARKERS = ("NO SPORTS CONTENT TODAY", "NO GAMING CONTENT TODAY",
+                "NO BENGALI BOOK CONTENT TODAY", "NO MOVIES CONTENT TODAY")
+
+
+def _script_status(content: str) -> str:
+    if content.startswith("[ERROR]"):
+        return "error"
+    if any(marker in content for marker in SKIP_MARKERS):
+        return "skipped"
+    return "ok"
+
+
+def render_squad2_report_cards(scripts: dict, date_str: str) -> None:
+    newsletter = scripts.get("AI Newsletter", "")
+    render_report_card(
+        "squad2_newsletter", date_str,
+        stats={"Chars Written": len(newsletter), "Status": _script_status(newsletter)},
+        items=[{"tag": "newsletter", "text": newsletter[:120]}] if newsletter else [],
+        note="Weekly AI/tech newsletter issue drafted and ready for approval."
+             if _script_status(newsletter) == "ok" else "Newsletter generation hit an issue this run.",
+    )
+
+    thread = scripts.get("Twitter Thread (AI/Tech)", "")
+    render_report_card(
+        "squad2_twitter", date_str,
+        stats={"Chars Written": len(thread), "Status": _script_status(thread)},
+        items=[{"tag": "thread", "text": thread[:120]}] if thread else [],
+        note="6-tweet thread drafted from today's digest."
+             if _script_status(thread) == "ok" else "Twitter thread generation hit an issue this run.",
+    )
+
+    reel_items = [{"tag": name.replace("Instagram Reel (", "").rstrip(")"),
+                   "text": f"{_script_status(content)} — {len(content)} chars"}
+                  for name, content in scripts.items() if name in REEL_NAMES]
+    ok_count = sum(1 for name, content in scripts.items()
+                   if name in REEL_NAMES and _script_status(content) == "ok")
+    skip_count = sum(1 for name, content in scripts.items()
+                      if name in REEL_NAMES and _script_status(content) == "skipped")
+    render_report_card(
+        "squad2_reels", date_str,
+        stats={"Reels Written": ok_count, "Skipped (no data)": skip_count, "Niches Covered": len(REEL_NAMES)},
+        items=reel_items,
+        note=f"{ok_count}/{len(REEL_NAMES)} Reel scripts ready across AI/Tech, Sports, "
+             f"Bengali Books, Movies and Gaming.",
+    )
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 
 def main():
@@ -303,6 +357,8 @@ def main():
     if error_count > 3:
         log.error("%d generators failed (threshold: 3). Exiting with code 1.", error_count)
         sys.exit(1)
+
+    render_squad2_report_cards(scripts, date_str)
 
     # Save individual files
     scripts_dir = OUTPUT_DIR / date_str

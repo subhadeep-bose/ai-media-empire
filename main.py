@@ -1,7 +1,8 @@
 """
 main.py — Master Controller
 Chains: Squad 1 (Intel) → Squad 2 (Content) → Squad 3 (Multimedia) → Squad 6
-(Analytics) → Chief of Staff (Roundup) → Notify (GitHub Issue + approval email)
+(Analytics) → Chief of Staff (Roundup) → Notify (GitHub Issue + approval
+email + Telegram dashboard)
 Run this daily via GitHub Actions or local cron.
 """
 

@@ -1,9 +1,10 @@
 """
 Notify — surfaces the Chief of Staff's daily roundup outside the Actions
-artifact: opens/updates a GitHub Issue and emails the approval draft.
-Both channels are best-effort and independently optional — missing
-credentials for one don't block the other, they just log a warning and
-skip. Safe to run standalone (CI) or imported from main.py (local/cron).
+artifact: opens/updates a GitHub Issue, emails the approval draft, and
+sends a dashboard snapshot to Telegram. All channels are best-effort and
+independently optional — missing credentials for one don't block the
+others, they just log a warning and skip. Safe to run standalone (CI) or
+imported from main.py (local/cron).
 """
 
 import json
@@ -21,7 +22,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import (
     REPORTS_DIR, OUTPUT_DIR, GITHUB_REPOSITORY, GITHUB_TOKEN, ROUNDUP_ISSUE_LABEL,
     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, NOTIFY_EMAIL_TO,
+    TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
 )
+from dashboard import build_dashboard
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,6 +34,7 @@ logging.basicConfig(
 log = logging.getLogger("notify")
 
 GITHUB_API = "https://api.github.com"
+TELEGRAM_API = "https://api.telegram.org"
 
 
 def load_roundup(date_str: str) -> dict:
@@ -109,11 +113,47 @@ def send_approval_email(date_str: str, summary: str) -> None:
         log.exception("Failed to send approval email")
 
 
+def send_telegram_dashboard(date_str: str, summary: str) -> None:
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        log.warning("TELEGRAM_BOT_TOKEN/TELEGRAM_CHAT_ID not set — skipping Telegram dashboard")
+        return
+
+    base = f"{TELEGRAM_API}/bot{TELEGRAM_BOT_TOKEN}"
+    text = f"Daily Intel Sweep — {date_str}\n\n{summary}"
+
+    try:
+        _, png_path = build_dashboard(date_str)
+    except Exception:
+        log.exception("Failed to build dashboard — sending text-only Telegram summary")
+        png_path = None
+
+    try:
+        if png_path and png_path.exists():
+            with open(png_path, "rb") as f:
+                resp = requests.post(
+                    f"{base}/sendPhoto",
+                    data={"chat_id": TELEGRAM_CHAT_ID, "caption": text[:1024]},
+                    files={"photo": f}, timeout=20,
+                )
+            resp.raise_for_status()
+            log.info("Telegram dashboard photo sent")
+        else:
+            resp = requests.post(
+                f"{base}/sendMessage",
+                data={"chat_id": TELEGRAM_CHAT_ID, "text": text}, timeout=10,
+            )
+            resp.raise_for_status()
+            log.info("Telegram text summary sent")
+    except requests.RequestException:
+        log.exception("Failed to send Telegram notification")
+
+
 def notify_all(date_str: str, run_id: str = "") -> None:
     roundup = load_roundup(date_str)
     summary = build_summary(date_str, roundup)
     post_github_issue(date_str, summary, run_id)
     send_approval_email(date_str, summary)
+    send_telegram_dashboard(date_str, summary)
 
 
 def main():

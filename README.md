@@ -74,12 +74,12 @@ report card to `reports/YYYY-MM-DD/` every run, summarised by a Chief of Staff r
 | Agent | Role |
 |---|---|
 | MS Dhoni | Chief of Staff — daily roundup |
-| Virat Kohli | Intel Scout — Squad 1 |
-| R Ashwin | Newsletter Strategist — Squad 2 |
+| Vaibhav Suryavanshi | Intel Scout — Squad 1 |
+| Sourav Ganguly | Newsletter Strategist — Squad 2 |
 | Rohit Sharma | Thread Opener — Squad 2 |
 | Jasprit Bumrah | Reel Scriptwriter — Squad 2 |
-| Rahul Dravid | Production Chief — Squad 3 |
-| Ravindra Jadeja | Analytics All-Rounder — Squad 6 |
+| Abhishek Sharma | Production Chief — Squad 3 |
+| Yuvraj Singh | Analytics All-Rounder — Squad 6 |
 
 Report cards are included in the `daily-content-*` Actions artifact alongside scripts and media.
 

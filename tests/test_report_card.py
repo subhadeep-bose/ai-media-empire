@@ -23,11 +23,11 @@ def test_render_report_card_writes_html_and_json(tmp_path, monkeypatch):
     )
 
     assert html_path.exists()
-    assert "Virat Kohli" in html_path.read_text(encoding="utf-8")
+    assert "Vaibhav Suryavanshi" in html_path.read_text(encoding="utf-8")
 
     json_path = tmp_path / "2026-06-30" / "squad1_intel.json"
     data = json.loads(json_path.read_text(encoding="utf-8"))
-    assert data["name"] == "Virat Kohli"
+    assert data["name"] == "Vaibhav Suryavanshi"
     assert data["stats"]["Items Collected"] == 12
 
 

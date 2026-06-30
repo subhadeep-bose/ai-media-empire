@@ -67,10 +67,10 @@ NOTIFY_EMAIL_TO = os.getenv("NOTIFY_EMAIL_TO", "")
 
 AGENT_PROFILES = {
     "chief_of_staff":    {"name": "MS Dhoni",        "role": "Chief of Staff"},
-    "squad1_intel":      {"name": "Virat Kohli",      "role": "Intel Scout — Squad 1"},
-    "squad2_newsletter": {"name": "R Ashwin",         "role": "Newsletter Strategist — Squad 2"},
-    "squad2_twitter":    {"name": "Rohit Sharma",     "role": "Thread Opener — Squad 2"},
-    "squad2_reels":      {"name": "Jasprit Bumrah",   "role": "Reel Scriptwriter — Squad 2"},
-    "squad3_production": {"name": "Rahul Dravid",     "role": "Production Chief — Squad 3"},
-    "squad6_analytics":  {"name": "Ravindra Jadeja",  "role": "Analytics All-Rounder — Squad 6"},
+    "squad1_intel":      {"name": "Vaibhav Suryavanshi", "role": "Intel Scout — Squad 1"},
+    "squad2_newsletter": {"name": "Sourav Ganguly",      "role": "Newsletter Strategist — Squad 2"},
+    "squad2_twitter":    {"name": "Rohit Sharma",        "role": "Thread Opener — Squad 2"},
+    "squad2_reels":      {"name": "Jasprit Bumrah",      "role": "Reel Scriptwriter — Squad 2"},
+    "squad3_production": {"name": "Abhishek Sharma",     "role": "Production Chief — Squad 3"},
+    "squad6_analytics":  {"name": "Yuvraj Singh",        "role": "Analytics All-Rounder — Squad 6"},
 }

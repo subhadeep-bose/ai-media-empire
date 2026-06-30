@@ -109,7 +109,10 @@ def main():
         log("Squad 3 failed — scripts exist but no audio/metadata generated today.")
         # Non-fatal: approval email still useful
 
-    # Step 4: Notify for approval
+    # Step 4: Analytics feedback loop (updates niche_boosts.json for tomorrow's Squad 1)
+    run_squad("squad6_analytics/analytics_run.py", "Squad 6 (Analytics)")
+
+    # Step 5: Notify for approval
     send_gmail_approval(date_str)
 
     log("=" * 50)

@@ -206,7 +206,7 @@ def scrape_reddit_ai(seen: set) -> list:
 
 # ── Scraper: Goodreads Bengali Shelf ──────────────────────────────────────
 
-def scrape_bengali_goodreads(seen: set) -> list:
+def scrape_bengali_goodreads(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     """
     Scrapes Bengali shelf AND fetches each book's individual page
     to get the real description and genre — prevents LLM hallucinating plot/author.
@@ -218,7 +218,7 @@ def scrape_bengali_goodreads(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "html.parser")
         book_elements = soup.find_all("div", class_="elementList")
         results = []
-        for el in book_elements[:3]:
+        for el in book_elements[:limit]:
             title_tag = el.find("a", class_="bookTitle") or el.find("a")
             title = title_tag.get_text(strip=True) if title_tag else ""
             book_url = "https://www.goodreads.com" + title_tag["href"] if title_tag and title_tag.get("href") else ""
@@ -270,7 +270,7 @@ def scrape_bengali_goodreads(seen: set) -> list:
 
 # ── Scraper: ESPNcricinfo ──────────────────────────────────────────────────
 
-def fetch_cricket_news(seen: set) -> list:
+def fetch_cricket_news(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     url = "https://www.espncricinfo.com/rss/content/story/feeds/0.xml"
     try:
         resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
@@ -278,7 +278,7 @@ def fetch_cricket_news(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         items = soup.find_all("item")
         results = []
-        for item in items[:ITEMS_PER_SOURCE]:
+        for item in items[:limit]:
             title = item.title.get_text(strip=True) if item.title else ""
             if not title or not is_new(title, seen):
                 continue
@@ -293,7 +293,7 @@ def fetch_cricket_news(seen: set) -> list:
 
 # ── Scraper: r/soccer ─────────────────────────────────────────────────────
 
-def fetch_soccer_trends(seen: set) -> list:
+def fetch_soccer_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     url = "https://www.reddit.com/r/soccer/.rss"
     try:
         resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
@@ -301,7 +301,7 @@ def fetch_soccer_trends(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         entries = soup.find_all("entry")
         results = []
-        for entry in entries[:ITEMS_PER_SOURCE]:
+        for entry in entries[:limit]:
             title = entry.title.get_text(strip=True) if entry.title else ""
             if not title or not is_new(title, seen):
                 continue
@@ -320,7 +320,7 @@ def fetch_soccer_trends(seen: set) -> list:
 
 # ── Scraper: Wrestling Inc (WWE) ───────────────────────────────────────────
 
-def fetch_wwe_news(seen: set) -> list:
+def fetch_wwe_news(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     url = "https://www.wrestlinginc.com/feed/"
     try:
         resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
@@ -328,7 +328,7 @@ def fetch_wwe_news(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         items = soup.find_all("item")
         results = []
-        for item in items[:ITEMS_PER_SOURCE]:
+        for item in items[:limit]:
             title = item.title.get_text(strip=True) if item.title else ""
             if not title or not is_new(title, seen):
                 continue
@@ -343,7 +343,7 @@ def fetch_wwe_news(seen: set) -> list:
 
 # ── Scraper: r/movies ─────────────────────────────────────────────────────
 
-def fetch_movie_trends(seen: set) -> list:
+def fetch_movie_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     url = "https://www.reddit.com/r/movies/.rss"
     try:
         resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
@@ -351,7 +351,7 @@ def fetch_movie_trends(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         entries = soup.find_all("entry")
         results = []
-        for entry in entries[:ITEMS_PER_SOURCE]:
+        for entry in entries[:limit]:
             title = entry.title.get_text(strip=True) if entry.title else ""
             if not title or not is_new(title, seen):
                 continue
@@ -370,7 +370,7 @@ def fetch_movie_trends(seen: set) -> list:
 
 # ── Scraper: SteamDB / r/SteamDeck ────────────────────────────────────────
 
-def fetch_gaming_trends(seen: set) -> list:
+def fetch_gaming_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     url = "https://www.reddit.com/r/SteamDeck/.rss"
     try:
         resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
@@ -378,7 +378,7 @@ def fetch_gaming_trends(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         entries = soup.find_all("entry")
         results = []
-        for entry in entries[:ITEMS_PER_SOURCE]:
+        for entry in entries[:limit]:
             title = entry.title.get_text(strip=True) if entry.title else ""
             if not title or not is_new(title, seen):
                 continue

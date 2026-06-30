@@ -21,7 +21,10 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-from config import DIGEST_PATH, LOG_DIR, GROQ_MAX_TOKENS_INTEL
+from config import (
+    DIGEST_PATH, LOG_DIR, GROQ_MAX_TOKENS_INTEL,
+    ITEMS_PER_SOURCE, NICHE_BOOST_PATH, NICHE_BOOST_MULTIPLIER,
+)
 from llm import call_llm
 
 LOG_DIR.mkdir(exist_ok=True)
@@ -35,6 +38,18 @@ from scrapers import (
     scrape_bengali_goodreads, fetch_cricket_news, fetch_soccer_trends,
     fetch_wwe_news, fetch_movie_trends, fetch_gaming_trends,
 )
+
+
+def load_boosted_niches() -> set:
+    """Read niches Squad 6 flagged as gone quiet for ANALYTICS_SKIP_STREAK_THRESHOLD+ runs."""
+    if not NICHE_BOOST_PATH.exists():
+        return set()
+    try:
+        data = json.loads(NICHE_BOOST_PATH.read_text(encoding="utf-8"))
+        return set(data.get("boosted_niches", []))
+    except (json.JSONDecodeError, OSError):
+        log.warning("Could not read %s — no boosts applied", NICHE_BOOST_PATH)
+        return set()
 
 
 # ── Master prompt ──────────────────────────────────────────────────────────
@@ -70,17 +85,24 @@ def main():
     seen = load_seen_items()
     log.info("%d items already seen — deduplication active", len(seen))
 
+    boosted_niches = load_boosted_niches()
+    if boosted_niches:
+        log.info("Boosting scrape volume for niches gone quiet: %s", ", ".join(sorted(boosted_niches)))
+
+    def limit_for(niche: str) -> int:
+        return ITEMS_PER_SOURCE * NICHE_BOOST_MULTIPLIER if niche in boosted_niches else ITEMS_PER_SOURCE
+
     log.info("Running all 9 scrapers with rate limiting...")
     raw_feed = (
         scrape_github_trending(seen) +
         fetch_arxiv_ai_papers(seen) +
         scrape_reddit_ai(seen) +
-        scrape_bengali_goodreads(seen) +
-        fetch_cricket_news(seen) +
-        fetch_soccer_trends(seen) +
-        fetch_wwe_news(seen) +
-        fetch_movie_trends(seen) +
-        fetch_gaming_trends(seen)
+        scrape_bengali_goodreads(seen, limit=limit_for("bengali_books")) +
+        fetch_cricket_news(seen, limit=limit_for("sports")) +
+        fetch_soccer_trends(seen, limit=limit_for("sports")) +
+        fetch_wwe_news(seen, limit=limit_for("sports")) +
+        fetch_movie_trends(seen, limit=limit_for("movies")) +
+        fetch_gaming_trends(seen, limit=limit_for("gaming"))
     )
 
     good_items = [i for i in raw_feed if "error" not in i]

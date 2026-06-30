@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts
 
+      - name: Verify ffmpeg is available
+        run: ffmpeg -version && ffprobe -version
+
       - name: Run Squad 1 — Intel scrape
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -42,6 +45,7 @@ jobs:
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OLLAMA_MODEL: llama3:8b
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
         run: python squad3_production/squad3_run.py
 
       - name: Run tests

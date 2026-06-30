@@ -23,3 +23,9 @@ DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
 OUTPUT_DIR = REPO_ROOT / "squad2_output"
 LOG_DIR = REPO_ROOT / "logs"
 DOCS_DIR = REPO_ROOT / "docs"
+
+# Squad 3 — video assembly
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
+VIDEO_WIDTH = 1080
+VIDEO_HEIGHT = 1920
+STOCK_CLIPS_PER_REEL = 3

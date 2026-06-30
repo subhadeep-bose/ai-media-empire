@@ -21,6 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import OUTPUT_DIR, REPO_ROOT
 from tts import generate_audio, generate_srt
 from metadata import generate_youtube_metadata, generate_instagram_caption
+from visuals import fetch_stock_clips
+from video import assemble_video
 
 logging.basicConfig(
     level=logging.INFO,
@@ -56,7 +58,7 @@ def process_niche(name: str, script: str, date_str: str) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     result = {"niche": niche_slug, "skipped": False, "audio": False,
-              "srt": False, "youtube_meta": False, "instagram_caption": False}
+              "srt": False, "video": False, "youtube_meta": False, "instagram_caption": False}
 
     if _should_skip(script):
         log.info("Skipping %s — no content today", name)
@@ -66,7 +68,7 @@ def process_niche(name: str, script: str, date_str: str) -> dict:
     # Save raw script copy
     (out_dir / "script.txt").write_text(script, encoding="utf-8")
 
-    # TTS + captions for Reel scripts
+    # TTS + captions + assembled video for Reel scripts
     if do_audio:
         audio_path = out_dir / "audio.mp3"
         result["audio"] = generate_audio(script, niche_slug, audio_path)
@@ -74,6 +76,16 @@ def process_niche(name: str, script: str, date_str: str) -> dict:
         srt_path = out_dir / "captions.srt"
         generate_srt(script, srt_path)
         result["srt"] = True
+
+        if result["audio"]:
+            clips_dir = out_dir / "_clips"
+            clips = fetch_stock_clips(niche_slug, clips_dir)
+            video_path = out_dir / "video.mp4"
+            result["video"] = assemble_video(audio_path, srt_path, clips, video_path)
+            for clip in clips:
+                clip.unlink(missing_ok=True)
+            if clips_dir.exists() and not any(clips_dir.iterdir()):
+                clips_dir.rmdir()
 
     # YouTube metadata for all niches
     log.info("Generating YouTube metadata for %s...", name)
@@ -134,9 +146,11 @@ def main():
     log.info("=" * 55)
     log.info("SQUAD 3 COMPLETE")
     audio_count = sum(1 for r in results.values() if r.get("audio"))
+    video_count = sum(1 for r in results.values() if r.get("video"))
     meta_count  = sum(1 for r in results.values() if r.get("youtube_meta"))
     skip_count  = sum(1 for r in results.values() if r.get("skipped"))
     log.info("Audio files:      %d", audio_count)
+    log.info("Assembled videos: %d", video_count)
     log.info("YouTube metadata: %d", meta_count)
     log.info("Skipped (no data):%d", skip_count)
     log.info("Output dir:       %s", SQUAD3_OUTPUT / date_str)

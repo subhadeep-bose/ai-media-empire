@@ -1,0 +1,30 @@
+name: Stale issue cleanup
+
+# Keeps pipeline-failure and api-health issues from accumulating silently —
+# pings after 14 days of inactivity, closes 7 days after that if still
+# untouched. Does not touch PRs or unlabelled issues.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          only-labels: 'pipeline-failure,api-health'
+          days-before-stale: 14
+          days-before-close: 7
+          stale-issue-message: >
+            This issue has had no activity for 14 days. It will be closed in 7 days
+            if there's no further activity.
+          close-issue-message: >
+            Closing due to inactivity. Re-open if this is still happening.
+          exempt-issue-labels: 'keep-open'
+          days-before-pr-stale: -1
+          days-before-pr-close: -1

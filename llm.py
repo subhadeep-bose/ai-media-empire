@@ -2,8 +2,10 @@ import os
 import logging
 import requests
 import time
+from datetime import datetime
 
 from config import GROQ_MODEL, GROQ_RATE_LIMIT_RETRIES, GROQ_RATE_LIMIT_WAIT_BASE, OLLAMA_MODEL
+from usage_tracker import record_groq_usage
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +35,8 @@ def call_groq(prompt: str, max_tokens: int = 1000) -> str:
             )
             data = resp.json()
             if "choices" in data:
+                tokens = data.get("usage", {}).get("total_tokens", 0)
+                record_groq_usage(datetime.now().strftime("%Y-%m-%d"), tokens)
                 return data["choices"][0]["message"]["content"]
             err = data.get("error", {})
             if isinstance(err, dict) and err.get("code") == "rate_limit_exceeded":

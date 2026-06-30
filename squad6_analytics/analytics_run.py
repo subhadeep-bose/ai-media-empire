@@ -22,6 +22,7 @@ from config import (
 )
 from reports.report_card import render_report_card
 import telegram_bot
+from runtime_args import get_date_str
 
 logging.basicConfig(
     level=logging.INFO,
@@ -80,7 +81,7 @@ def save_boosts(boosted: list) -> None:
 
 
 def main():
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = get_date_str()
     log.info("SQUAD 6: Analytics feedback loop — %s", date_str)
 
     results_path = SQUAD3_OUTPUT / date_str / "_results.json"

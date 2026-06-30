@@ -27,11 +27,24 @@ SKIP_MARKERS = (
     "[ERROR]",
 )
 
+# Squad 3 moderation pass — case-insensitive substring denylist checked
+# against each script before TTS/video assembly. Intentionally small and
+# blunt (a safety net for an obvious LLM slip, not a full moderation
+# system); flagged niches are skipped the same way SKIP_MARKERS niches are.
+MODERATION_DENYLIST = (
+    "kill yourself",
+    "suicide instructions",
+    "child sexual",
+    "how to make a bomb",
+    "credit card number",
+)
+
 # Paths
 SEEN_ITEMS_PATH = REPO_ROOT / "seen_items.json"
 DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
 OUTPUT_DIR = REPO_ROOT / "squad2_output"
 LOG_DIR = REPO_ROOT / "logs"
+LLM_USAGE_PATH = REPO_ROOT / "llm_usage_history.json"
 
 # Squad 3 — video assembly
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")

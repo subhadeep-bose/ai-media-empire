@@ -160,6 +160,32 @@ Pull requests are checked by a separate `lint.yml` workflow: conventional-commit
   (e.g. just Squad 3) without redoing the whole day. Always runs against "today" — the squad scripts don't
   support a date override, so this isn't for backfilling a past date.
 
+### Other workflows
+
+- **`.github/CODEOWNERS`** — auto-requests review on PRs touching a given squad's directory.
+- **`stale.yml`** — closes `pipeline-failure`/`api-health` issues after 14 days of inactivity (7-day warning first).
+- **`weekly_trend_digest.yml`** — runs `squad6_analytics/trend_digest.py` weekly, posting a Telegram summary of
+  each niche's current skip-streak state (healthy vs. going quiet), separate from the daily boost logic.
+
+### --date override
+
+Every squad script and `chief_of_staff.py` accept an optional `--date YYYY-MM-DD` flag (`runtime_args.py`),
+defaulting to today. Scrapers still fetch live data regardless — this only controls which `date_str` the
+run's output is filed and labelled under, so a single failed stage can be retried against the date it
+actually ran for.
+
+### Moderation pass
+
+Squad 3 checks each script against a small denylist (`config.MODERATION_DENYLIST`) right before TTS/video
+assembly, in `moderation.py`. A flagged niche is skipped the same way an empty/no-content niche is — this
+is a blunt safety net for an obvious LLM slip, not a full moderation system.
+
+### Groq usage tracking
+
+`llm.py` records each Groq call's `total_tokens` to `llm_usage_history.json` via `usage_tracker.py`. Ollama
+calls aren't tracked (local, free). The Chief of Staff roundup card shows the day's running total under
+"Groq Tokens Used Today".
+
 ---
 
 ## Reviewing daily output

@@ -1,0 +1,8 @@
+# Default owner for everything not matched below
+*                           @subhadeep-bose
+
+/squad1_intel/              @subhadeep-bose
+/squad2_content/            @subhadeep-bose
+/squad3_production/         @subhadeep-bose
+/squad6_analytics/          @subhadeep-bose
+/.github/workflows/         @subhadeep-bose

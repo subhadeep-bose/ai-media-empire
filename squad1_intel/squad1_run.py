@@ -1,6 +1,6 @@
 """
 Squad 1 — Master Orchestrator
-Runs all 22 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
+Runs all 30 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
 saves master_intel_digest.md for Squad 2 to consume.
 """
 
@@ -38,15 +38,18 @@ from scrapers import (
     scrape_github_trending, fetch_arxiv_ai_papers, scrape_reddit_ai,
     fetch_tldr_ai, fetch_hackernews_ai, fetch_reddit_ml,
     fetch_venturebeat_ai, fetch_mit_tech_review, fetch_reddit_localllama,
+    fetch_verge_ai, fetch_bens_bites,
     # Bengali Books
     scrape_bengali_goodreads,
     # Sports
     fetch_cricket_news, fetch_soccer_trends, fetch_wwe_news,
-    fetch_bbc_sport, fetch_cricbuzz,
+    fetch_bbc_sport, fetch_cricbuzz, fetch_reddit_cricket, fetch_reddit_wwe,
     # Movies & TV
-    fetch_movie_trends, fetch_reddit_television, fetch_variety, fetch_hollywood_reporter,
+    fetch_movie_trends, fetch_reddit_television, fetch_variety,
+    fetch_hollywood_reporter, fetch_deadline,
     # Gaming
     fetch_gaming_trends, fetch_reddit_ps5, fetch_ign_gaming, fetch_eurogamer,
+    fetch_pc_gamer, fetch_rock_paper_shotgun,
 )
 from reports.report_card import render_report_card
 import telegram_bot
@@ -108,7 +111,7 @@ def main():
 
     log.info("Running all 9 scrapers with rate limiting...")
     raw_feed = (
-        # AI/Tech (8 sources)
+        # AI/Tech (11 sources)
         scrape_github_trending(seen) +
         fetch_arxiv_ai_papers(seen) +
         scrape_reddit_ai(seen) +
@@ -118,24 +121,31 @@ def main():
         fetch_venturebeat_ai(seen) +
         fetch_mit_tech_review(seen) +
         fetch_reddit_localllama(seen) +
+        fetch_verge_ai(seen) +
+        fetch_bens_bites(seen) +
         # Bengali Books (1 source)
         scrape_bengali_goodreads(seen, limit=limit_for("bengali_books")) +
-        # Sports (5 sources)
+        # Sports (7 sources)
         fetch_cricket_news(seen, limit=limit_for("sports")) +
         fetch_soccer_trends(seen, limit=limit_for("sports")) +
         fetch_wwe_news(seen, limit=limit_for("sports")) +
         fetch_bbc_sport(seen, limit=limit_for("sports")) +
         fetch_cricbuzz(seen, limit=limit_for("sports")) +
-        # Movies & TV (4 sources)
+        fetch_reddit_cricket(seen, limit=limit_for("sports")) +
+        fetch_reddit_wwe(seen, limit=limit_for("sports")) +
+        # Movies & TV (5 sources)
         fetch_movie_trends(seen, limit=limit_for("movies")) +
         fetch_reddit_television(seen, limit=limit_for("movies")) +
         fetch_variety(seen, limit=limit_for("movies")) +
         fetch_hollywood_reporter(seen, limit=limit_for("movies")) +
-        # Gaming (4 sources)
+        fetch_deadline(seen, limit=limit_for("movies")) +
+        # Gaming (6 sources)
         fetch_gaming_trends(seen, limit=limit_for("gaming")) +
         fetch_reddit_ps5(seen, limit=limit_for("gaming")) +
         fetch_ign_gaming(seen, limit=limit_for("gaming")) +
-        fetch_eurogamer(seen, limit=limit_for("gaming"))
+        fetch_eurogamer(seen, limit=limit_for("gaming")) +
+        fetch_pc_gamer(seen, limit=limit_for("gaming")) +
+        fetch_rock_paper_shotgun(seen, limit=limit_for("gaming"))
     )
 
     good_items = [i for i in raw_feed if "error" not in i]

@@ -8,7 +8,7 @@ import json
 import random
 import sys
 import logging
-from datetime import datetime
+import datetime as _dt
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS
+from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS, HOT_TAKE_PENDING_PATH
 from llm import call_llm
 from reports.report_card import render_report_card
 import telegram_bot
@@ -134,6 +134,72 @@ Rules:
 - Only use facts directly from the digest — no embellishment.
 Output ONLY the tweets separated by ---
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)
+
+
+def write_twitter_hot_take(digest: str) -> str:
+    ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
+    if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+
+    return call_llm(f"""
+You are a contrarian AI/tech commentator with strong opinions. Write ONE standalone tweet.
+
+AI/Tech section of today's digest (the ONLY content you may use):
+{ai_tech_context}
+
+FORMAT:
+A single punchy opinion or hot take under 240 characters. No thread numbering.
+Must be opinionated — a real take, not a summary. Designed to provoke replies.
+
+Examples of the RIGHT tone:
+- "Hot take: AI safety teams at big labs are the most expensive PR departments in history."
+- "The real AI story this week isn't the benchmark. It's that nobody asked if we needed it."
+- "Every 'open source' model release from a big lab is a marketing move. Fight me."
+
+CRITICAL RULES:
+- ONLY comment on stories from the AI/Tech section above.
+- NEVER invent statistics or quotes.
+- NO hashtags.
+- Output ONLY the tweet text. No preamble, no quotes around it.
+""", max_tokens=300)
+
+
+def write_twitter_weekly_poll(digest: str) -> str:
+    """Generates a poll on Mondays only; returns skip marker on other days."""
+    if _dt.datetime.now().weekday() != 0:  # 0 = Monday
+        return "NO POLL TODAY"
+
+    ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
+    if not ai_tech_context:
+        return "NO POLL TODAY"
+
+    raw = call_llm(f"""
+You are a Twitter engagement strategist. Create a poll about this week's AI/Tech news.
+
+AI/Tech section of today's digest:
+{ai_tech_context}
+
+OUTPUT FORMAT (JSON only, no extra text):
+{{
+  "question": "One punchy poll question under 200 chars",
+  "options": ["Option A", "Option B", "Option C", "Option D"]
+}}
+
+Rules:
+- Question must be genuinely debatable — not trivia with a correct answer.
+- Each option under 25 chars.
+- No hashtags.
+- Output ONLY the JSON object.
+""", max_tokens=200)
+
+    # Validate it's parseable JSON before returning
+    try:
+        import json as _json
+        _json.loads(raw.strip())
+        return raw.strip()
+    except Exception:
+        log.warning("Weekly poll JSON invalid — skipping: %s", raw[:100])
+        return "NO POLL TODAY"
 
 
 def write_reel_ai(digest: str) -> str:
@@ -366,6 +432,8 @@ def main():
     generators = {
         "AI Newsletter":                  write_newsletter,
         "Twitter Thread (AI/Tech)":       write_twitter_thread,
+        "Twitter Hot Take":               write_twitter_hot_take,
+        "Twitter Weekly Poll":            write_twitter_weekly_poll,
         "Instagram Reel (AI/Tech)":       write_reel_ai,
         "Instagram Reel (Sports)":        write_reel_sports,
         "Instagram Reel (Bengali Books)": write_reel_bengali,
@@ -409,6 +477,16 @@ def main():
         safe = name.lower().replace(" ", "_").replace("/", "_").replace("(", "").replace(")", "")
         with open(scripts_dir / f"{safe}.txt", "w", encoding="utf-8") as f:
             f.write(content)
+
+    # Persist hot take for the delayed-post workflow
+    hot_take = scripts.get("Twitter Hot Take", "")
+    if hot_take and not any(m in hot_take for m in SKIP_MARKERS):
+        import json as _json
+        HOT_TAKE_PENDING_PATH.write_text(
+            _json.dumps({"date": date_str, "text": hot_take}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        log.info("Hot take staged for delayed post → %s", HOT_TAKE_PENDING_PATH)
 
     # Approval email
     email_draft = build_approval_email(scripts, date_str)

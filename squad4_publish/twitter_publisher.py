@@ -1,11 +1,13 @@
 """
-Twitter publisher — posts a thread with one branded image per tweet via tweepy v4 (API v2).
+Twitter publisher — tweepy v4 (OAuth 1.0a + API v2).
 
-Requires four secrets in env:
-  TWITTER_API_KEY, TWITTER_API_SECRET,
-  TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET
+post_thread()    — tweet 1 gets hero image, tweets 2-6 are plain text replies
+post_hot_take()  — standalone tweet with hot-take card image
+post_poll()      — standalone poll tweet (no image; Twitter renders the poll widget)
 """
 
+import io
+import json
 import logging
 import os
 import time
@@ -18,7 +20,7 @@ if str(REPO_ROOT) not in sys.path:
 
 log = logging.getLogger(__name__)
 
-_INTER_TWEET_DELAY = 2  # seconds between posts to respect rate limits
+_INTER_TWEET_DELAY = 2  # seconds between posts
 
 
 def _client():
@@ -35,11 +37,8 @@ def _client():
     if not all([api_key, api_secret, acc_token, acc_secret]):
         raise RuntimeError("Missing one or more TWITTER_* env vars")
 
-    # v1.1 client (needed for media upload)
     auth = tweepy.OAuth1UserHandler(api_key, api_secret, acc_token, acc_secret)
     api_v1 = tweepy.API(auth)
-
-    # v2 client (needed for tweet creation with reply threading)
     client_v2 = tweepy.Client(
         consumer_key=api_key,
         consumer_secret=api_secret,
@@ -49,11 +48,25 @@ def _client():
     return api_v1, client_v2
 
 
-def post_thread(tweets: list[str], images: list[bytes] | None = None) -> bool:
+def _upload_image(api_v1, image_bytes: bytes, alt_text: str = "") -> list[str]:
+    """Upload PNG bytes via v1.1, set alt text, return [media_id_string]."""
+    try:
+        media = api_v1.media_upload(filename="card.png", file=io.BytesIO(image_bytes))
+        if alt_text:
+            try:
+                api_v1.create_media_metadata(media.media_id, alt_text=alt_text[:1000])
+            except Exception:
+                log.warning("Alt text upload failed — continuing without it")
+        return [str(media.media_id)]
+    except Exception:
+        log.exception("Media upload failed — posting without image")
+        return []
+
+
+def post_thread(tweets: list[str], hero_image: bytes | None = None) -> bool:
     """
-    Post a list of tweet strings as a thread.
-    images: list of PNG bytes, one per tweet (optional; length must match tweets).
-    Returns True on full success, False on any failure.
+    Post a thread. Tweet 1 gets hero_image (if provided); tweets 2-N are text only.
+    Returns True on full success.
     """
     try:
         api_v1, client_v2 = _client()
@@ -64,14 +77,9 @@ def post_thread(tweets: list[str], images: list[bytes] | None = None) -> bool:
     previous_id = None
     for i, text in enumerate(tweets):
         media_ids = []
-        if images and i < len(images):
-            try:
-                import io
-                media = api_v1.media_upload(filename=f"tweet_{i+1}.png",
-                                             file=io.BytesIO(images[i]))
-                media_ids = [media.media_id]
-            except Exception:
-                log.exception("Media upload failed for tweet %d — posting without image", i + 1)
+        if i == 0 and hero_image:
+            alt = f"Branded AI/Tech thread card — {text[:200]}"
+            media_ids = _upload_image(api_v1, hero_image, alt_text=alt)
 
         try:
             kwargs = {"text": text}
@@ -91,3 +99,57 @@ def post_thread(tweets: list[str], images: list[bytes] | None = None) -> bool:
             time.sleep(_INTER_TWEET_DELAY)
 
     return True
+
+
+def post_hot_take(text: str, image: bytes | None = None) -> bool:
+    """Post a standalone hot-take tweet with an optional image card."""
+    try:
+        api_v1, client_v2 = _client()
+    except RuntimeError as e:
+        log.error("Twitter client init failed: %s", e)
+        return False
+
+    media_ids = []
+    if image:
+        alt = f"Hot take card — {text[:200]}"
+        media_ids = _upload_image(api_v1, image, alt_text=alt)
+
+    try:
+        kwargs = {"text": text}
+        if media_ids:
+            kwargs["media_ids"] = media_ids
+        response = client_v2.create_tweet(**kwargs)
+        log.info("Hot take posted (id=%s)", response.data["id"])
+        return True
+    except Exception:
+        log.exception("Failed to post hot take")
+        return False
+
+
+def post_poll(question: str, options: list[str], duration_hours: int = 24) -> bool:
+    """
+    Post a standalone poll tweet. No image — Twitter renders the poll widget inline.
+    options: 2–4 strings, each ≤25 chars.
+    """
+    try:
+        _, client_v2 = _client()
+    except RuntimeError as e:
+        log.error("Twitter client init failed: %s", e)
+        return False
+
+    options = [o[:25] for o in options[:4]]
+    if len(options) < 2:
+        log.error("Poll needs at least 2 options")
+        return False
+
+    try:
+        response = client_v2.create_tweet(
+            text=question,
+            poll_options=options,
+            poll_duration_minutes=duration_hours * 60,
+        )
+        log.info("Poll posted (id=%s)", response.data["id"])
+        return True
+    except Exception:
+        log.exception("Failed to post poll")
+        return False

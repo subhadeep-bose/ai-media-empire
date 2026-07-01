@@ -25,8 +25,11 @@ SKIP_MARKERS = (
     "NO BENGALI BOOK CONTENT TODAY",
     "NO MOVIES CONTENT TODAY",
     "NO AI/TECH CONTENT TODAY",
+    "NO POLL TODAY",
     "[ERROR]",
 )
+
+HOT_TAKE_PENDING_PATH = REPO_ROOT / "pending_hot_take.json"
 
 # Squad 3 moderation pass — case-insensitive substring denylist checked
 # against each script before TTS/video assembly. Intentionally small and

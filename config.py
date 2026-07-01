@@ -25,6 +25,7 @@ SKIP_MARKERS = (
     "NO BENGALI BOOK CONTENT TODAY",
     "NO MOVIES CONTENT TODAY",
     "NO AI/TECH CONTENT TODAY",
+    "NO POLL TODAY",
     "[ERROR]",
 )
 
@@ -46,12 +47,23 @@ DIGEST_PATH = REPO_ROOT / "master_intel_digest.md"
 OUTPUT_DIR = REPO_ROOT / "squad2_output"
 LOG_DIR = REPO_ROOT / "logs"
 LLM_USAGE_PATH = REPO_ROOT / "llm_usage_history.json"
+HOT_TAKE_PENDING_PATH = REPO_ROOT / "pending_hot_take.json"
+THREAD_HISTORY_PATH = REPO_ROOT / "thread_history.json"
 
 # Squad 3 — video assembly
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY", "")
 VIDEO_WIDTH = 1080
 VIDEO_HEIGHT = 1920
 STOCK_CLIPS_PER_REEL = 3
+
+# Squad 4 — publishing
+BRAND_BG_COLOR = os.getenv("BRAND_BG_COLOR", "#0D1117")
+BRAND_ACCENT_COLOR = os.getenv("BRAND_ACCENT_COLOR", "#6C63FF")
+BRAND_TEXT_COLOR = os.getenv("BRAND_TEXT_COLOR", "#FFFFFF")
+BRAND_HANDLE = os.getenv("TWITTER_HANDLE", "")
+TWEET_CARD_WIDTH = 1200
+TWEET_CARD_HEIGHT = 675
+APPROVAL_TIMEOUT_SECS = int(os.getenv("APPROVAL_TIMEOUT_SECS", "1800"))  # 30 min
 
 # Squad 5 — infra resilience
 SQUAD_RETRY_ATTEMPTS = 2          # extra attempts after the first failure
@@ -88,6 +100,7 @@ AGENT_PROFILES = {
     "squad2_twitter":    {"name": "Rohit Sharma",        "role": "Thread Opener — Squad 2"},
     "squad2_reels":      {"name": "Jasprit Bumrah",      "role": "Reel Scriptwriter — Squad 2"},
     "squad3_production": {"name": "Abhishek Sharma",     "role": "Production Chief — Squad 3"},
+    "squad4_publish":    {"name": "Hardik Pandya",       "role": "Publishing Engine — Squad 4"},
     "squad6_analytics":  {"name": "Yuvraj Singh",        "role": "Analytics All-Rounder — Squad 6"},
 }
 

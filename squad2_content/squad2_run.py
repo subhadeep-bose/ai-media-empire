@@ -186,6 +186,9 @@ def write_reel_bengali(digest: str) -> str:
                   if "Goodreads Bengali" in line or "Author:" in line or "Plot:" in line]
     book_context = "\n".join(book_items[:10]) if book_items else ""
 
+    if not book_context:
+        return "NO BENGALI BOOK CONTENT TODAY"
+
     return call_llm(f"""
 Write a 45-second Reel script reviewing a Bengali book for Instagram/Shorts.
 

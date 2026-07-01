@@ -23,8 +23,10 @@ REPO_ROOT = Path(__file__).parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+import warnings
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 from config import (
     SCRAPER_TIMEOUT,

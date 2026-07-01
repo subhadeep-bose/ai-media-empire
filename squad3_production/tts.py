@@ -16,14 +16,14 @@ TTS_RETRY_ATTEMPTS = 3
 TTS_RETRY_WAIT_BASE_SECS = 5
 
 NICHE_VOICES = {
-    "ai_tech":       "en-US-GuyNeural",
-    "sports":        "en-US-DavisNeural",
-    "bengali_books": "en-GB-SoniaNeural",
-    "movies":        "en-US-AriaNeural",
-    "gaming":        "en-US-TonyNeural",
-    "newsletter":    "en-US-ChristopherNeural",
-    "twitter":       "en-US-GuyNeural",
-    "default":       "en-US-JennyNeural",
+    "ai_tech":       ["en-US-GuyNeural",         "en-US-ChristopherNeural"],
+    "sports":        ["en-US-DavisNeural",        "en-US-TonyNeural"],
+    "bengali_books": ["en-GB-SoniaNeural",        "en-US-AriaNeural"],
+    "movies":        ["en-US-AriaNeural",         "en-US-JennyNeural"],
+    "gaming":        ["en-US-TonyNeural",         "en-US-GuyNeural"],
+    "newsletter":    ["en-US-ChristopherNeural",  "en-US-GuyNeural"],
+    "twitter":       ["en-US-GuyNeural",          "en-US-ChristopherNeural"],
+    "default":       ["en-US-JennyNeural",        "en-US-AriaNeural"],
 }
 
 
@@ -52,7 +52,7 @@ def generate_audio(script: str, niche: str, output_path: Path) -> bool:
         log.warning("edge-tts not installed — skipping TTS. Run: pip install edge-tts")
         return False
 
-    voice = NICHE_VOICES.get(niche, NICHE_VOICES["default"])
+    voices = NICHE_VOICES.get(niche, NICHE_VOICES["default"])
     cleaned = _clean_script(script)
     if not cleaned:
         log.warning("Empty script after cleaning for niche=%s", niche)
@@ -61,6 +61,7 @@ def generate_audio(script: str, niche: str, output_path: Path) -> bool:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     for attempt in range(1, TTS_RETRY_ATTEMPTS + 1):
+        voice = voices[(attempt - 1) % len(voices)]
         try:
             asyncio.run(_synthesise(cleaned, voice, output_path))
             size_kb = output_path.stat().st_size // 1024
@@ -68,9 +69,10 @@ def generate_audio(script: str, niche: str, output_path: Path) -> bool:
             return True
         except Exception:
             if attempt < TTS_RETRY_ATTEMPTS:
+                next_voice = voices[attempt % len(voices)]
                 wait = TTS_RETRY_WAIT_BASE_SECS * attempt
-                log.warning("TTS failed for niche=%s (attempt %d/%d) — retrying in %ds",
-                            niche, attempt, TTS_RETRY_ATTEMPTS, wait)
+                log.warning("TTS failed for niche=%s (attempt %d/%d, voice=%s) — retrying in %ds with voice=%s",
+                            niche, attempt, TTS_RETRY_ATTEMPTS, voice, wait, next_voice)
                 time.sleep(wait)
             else:
                 log.exception("TTS failed for niche=%s — all %d attempts exhausted",

@@ -63,7 +63,7 @@ BRAND_TEXT_COLOR = os.getenv("BRAND_TEXT_COLOR", "#FFFFFF")
 BRAND_HANDLE = os.getenv("TWITTER_HANDLE", "")
 TWEET_CARD_WIDTH = 1200
 TWEET_CARD_HEIGHT = 675
-APPROVAL_TIMEOUT_SECS = int(os.getenv("APPROVAL_TIMEOUT_SECS", "1800"))  # 30 min
+APPROVAL_TIMEOUT_SECS = int(os.getenv("APPROVAL_TIMEOUT_SECS") or "1800")  # 30 min
 
 # Squad 5 — infra resilience
 SQUAD_RETRY_ATTEMPTS = 2          # extra attempts after the first failure
@@ -86,7 +86,7 @@ GITHUB_REPOSITORY = os.getenv("GITHUB_REPOSITORY", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
 ROUNDUP_ISSUE_LABEL = "daily-roundup"
 SMTP_HOST = os.getenv("SMTP_HOST", "")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_PORT = int(os.getenv("SMTP_PORT") or "587")
 SMTP_USER = os.getenv("SMTP_USER", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 NOTIFY_EMAIL_TO = os.getenv("NOTIFY_EMAIL_TO", "")

@@ -14,7 +14,7 @@ GROQ_RATE_LIMIT_WAIT_BASE = 15
 # Scrapers
 SCRAPER_TIMEOUT = 10
 RATE_LIMIT_SECS = 2
-ITEMS_PER_SOURCE = 5
+ITEMS_PER_SOURCE = 3
 SUMMARY_MAX_CHARS = 150
 
 # Squad 2 generators write one of these exact strings when a niche has no

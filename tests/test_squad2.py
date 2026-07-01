@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from squad2_content.squad2_run import (
     extract_niche_section, write_reel_sports, write_reel_movies, write_reel_gaming,
-    write_reel_ai, write_newsletter, write_twitter_thread,
+    write_reel_ai, write_newsletter, write_twitter_thread, write_reel_bengali,
 )
 
 DIGEST = """
@@ -134,3 +134,18 @@ def test_write_reel_ai_calls_llm_with_only_ai_tech_section():
         assert "Gemini" in prompt
         assert "Yastika Bhatia" not in prompt
         assert "Roman Reigns" not in prompt
+
+
+def test_write_reel_bengali_skips_without_llm_call_when_no_book_data():
+    with patch("squad2_content.squad2_run.call_llm") as mock_llm:
+        result = write_reel_bengali(DIGEST_NO_SPORTS)
+        assert result == "NO BENGALI BOOK CONTENT TODAY"
+        mock_llm.assert_not_called()
+
+
+def test_write_reel_bengali_calls_llm_when_book_data_present():
+    digest_with_book = DIGEST + "\nAuthor: Rabindranath Tagore\nPlot: A tale of love and loss."
+    with patch("squad2_content.squad2_run.call_llm", return_value="script") as mock_llm:
+        result = write_reel_bengali(digest_with_book)
+        assert result == "script"
+        mock_llm.assert_called_once()

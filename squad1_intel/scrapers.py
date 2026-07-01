@@ -368,6 +368,78 @@ def fetch_movie_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
         return [{"platform": "Movies (Reddit)", "error": "scraper exception"}]
 
 
+# ── Scraper: TLDR AI newsletter (RSS) ────────────────────────────────────
+
+def fetch_tldr_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://tldr.tech/api/rss/ai"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "TLDR AI", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("TLDR AI scraper failed")
+        return [{"platform": "TLDR AI", "error": "scraper exception"}]
+
+
+# ── Scraper: Hacker News (AI stories via Algolia) ────────────────────────
+
+def fetch_hackernews_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = (
+        "https://hn.algolia.com/api/v1/search"
+        "?query=AI+machine+learning&tags=story&hitsPerPage=10"
+    )
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        hits = resp.json().get("hits", [])
+        results = []
+        for hit in hits[:limit]:
+            title = hit.get("title", "").strip()
+            if not title or not is_new(title, seen):
+                continue
+            summary = _truncate(hit.get("story_text") or hit.get("url") or "Hacker News discussion.")
+            results.append({"platform": "Hacker News", "title": title, "summary": _strip_html(summary)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Hacker News AI scraper failed")
+        return [{"platform": "Hacker News", "error": "scraper exception"}]
+
+
+# ── Scraper: r/MachineLearning ────────────────────────────────────────────
+
+def fetch_reddit_ml(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/MachineLearning/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "ML research discussion."
+            results.append({"platform": "Reddit/r/MachineLearning", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/MachineLearning scraper failed")
+        return [{"platform": "Reddit/r/MachineLearning", "error": "scraper exception"}]
+
+
 # ── Scraper: SteamDB / r/SteamDeck ────────────────────────────────────────
 
 def fetch_gaming_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:

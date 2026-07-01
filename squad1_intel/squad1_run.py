@@ -1,6 +1,6 @@
 """
 Squad 1 — Master Orchestrator
-Runs all 9 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
+Runs all 12 scrapers, deduplicates, sends to local Ollama (with Groq fallback),
 saves master_intel_digest.md for Squad 2 to consume.
 """
 
@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from scrapers import (
     load_seen_items, save_seen_items,
     scrape_github_trending, fetch_arxiv_ai_papers, scrape_reddit_ai,
+    fetch_tldr_ai, fetch_hackernews_ai, fetch_reddit_ml,
     scrape_bengali_goodreads, fetch_cricket_news, fetch_soccer_trends,
     fetch_wwe_news, fetch_movie_trends, fetch_gaming_trends,
 )
@@ -101,6 +102,9 @@ def main():
         scrape_github_trending(seen) +
         fetch_arxiv_ai_papers(seen) +
         scrape_reddit_ai(seen) +
+        fetch_tldr_ai(seen) +
+        fetch_hackernews_ai(seen) +
+        fetch_reddit_ml(seen) +
         scrape_bengali_goodreads(seen, limit=limit_for("bengali_books")) +
         fetch_cricket_news(seen, limit=limit_for("sports")) +
         fetch_soccer_trends(seen, limit=limit_for("sports")) +

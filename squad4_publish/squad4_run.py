@@ -46,7 +46,13 @@ def _load_bundle(date_str: str) -> dict:
 
 
 def _parse_tweets(thread_text: str) -> list[str]:
-    return [t.strip() for t in thread_text.split("---") if t.strip()]
+    import re
+    # Split on lines that are purely dashes (--- or ——— etc.) possibly surrounded by whitespace
+    parts = re.split(r"\n\s*-{3,}\s*\n", thread_text)
+    if len(parts) == 1:
+        # Fallback: LLM used Tweet 1: / Tweet 2: labels instead of separators
+        parts = re.split(r"\n(?=Tweet\s+\d+[:/])", thread_text)
+    return [t.strip() for t in parts if t.strip()]
 
 
 def _is_skipped(content: str) -> bool:

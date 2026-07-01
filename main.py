@@ -96,13 +96,19 @@ def main():
         log("Squad 3 failed — scripts exist but no audio/metadata generated today.")
         # Non-fatal: approval email still useful
 
-    # Step 4: Analytics feedback loop (updates niche_boosts.json for tomorrow's Squad 1)
+    # Step 4: Publishing — Telegram approval then Twitter posting
+    squad4_ok = run_squad("squad4_publish/squad4_run.py", "Squad 4 (Publishing)")
+    if not squad4_ok:
+        log("Squad 4 failed — scripts exist but nothing posted to Twitter today.")
+        # Non-fatal: rest of pipeline continues
+
+    # Step 5: Analytics feedback loop (updates niche_boosts.json for tomorrow's Squad 1)
     run_squad("squad6_analytics/analytics_run.py", "Squad 6 (Analytics)")
 
-    # Step 5: Chief of Staff rounds up every agent's report card for today
+    # Step 6: Chief of Staff rounds up every agent's report card for today
     run_squad("chief_of_staff.py", "Chief of Staff (Roundup)")
 
-    # Step 6: Notify — GitHub Issue roundup + approval email (each optional, best-effort)
+    # Step 7: Notify — GitHub Issue roundup + approval email (each optional, best-effort)
     notify.notify_all(date_str)
 
     log("=" * 50)

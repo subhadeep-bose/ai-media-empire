@@ -1,14 +1,14 @@
 {
   "movies": {
-    "skip_streak": 1,
+    "skip_streak": 0,
     "last_run": "2026-07-01"
   },
   "gaming": {
-    "skip_streak": 1,
+    "skip_streak": 0,
     "last_run": "2026-07-01"
   },
   "bengali_books": {
-    "skip_streak": 1,
+    "skip_streak": 2,
     "last_run": "2026-07-01"
   },
   "sports": {

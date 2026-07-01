@@ -24,7 +24,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts playwright
+        run: pip install requests beautifulsoup4 python-dotenv lxml pytest edge-tts playwright tweepy Pillow
 
       - name: Install Playwright Chromium
         run: playwright install --with-deps chromium
@@ -61,6 +61,23 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD3_PRODUCTION }}
         run: python squad3_production/squad3_run.py
+
+      - name: Run Squad 4 — Publishing
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
+          TWITTER_HANDLE: ${{ secrets.TWITTER_HANDLE }}
+          BRAND_BG_COLOR: ${{ secrets.BRAND_BG_COLOR }}
+          BRAND_ACCENT_COLOR: ${{ secrets.BRAND_ACCENT_COLOR }}
+          BRAND_TEXT_COLOR: ${{ secrets.BRAND_TEXT_COLOR }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN_SQUAD4_PUBLISH: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD4_PUBLISH }}
+          APPROVAL_TIMEOUT_SECS: ${{ secrets.APPROVAL_TIMEOUT_SECS }}
+        run: python squad4_publish/squad4_run.py
 
       - name: Run Squad 6 — Analytics feedback loop
         env:

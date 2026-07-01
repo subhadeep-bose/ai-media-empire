@@ -45,6 +45,18 @@ DIGEST_NO_AI_TECH = """
 - **Title**: India drop Yastika Bhatia and pick G Kamalini for Asian Games
 """
 
+# Digest using ### niche headers with #### sub-headings (as seen in production runs)
+DIGEST_SUBHEADINGS = """
+# Daily Intel Digest — 2026-07-01
+### AI/Tech
+#### Top 2 Items
+| Open-source AI tool | GitHub | Helps developers. | "AI Security Shield" |
+| Google Agents CLI | GitHub | Build AI agents. | "Unleash AI Agents" |
+### Gaming
+#### Top 2 Items
+| Steam Deck update | Reddit | New remote play. | "Steam Deck Drops" |
+"""
+
 
 def test_extract_niche_section_returns_only_matching_section():
     section = extract_niche_section(DIGEST, ["Gaming"])
@@ -134,6 +146,19 @@ def test_write_reel_ai_calls_llm_with_only_ai_tech_section():
         assert "Gemini" in prompt
         assert "Yastika Bhatia" not in prompt
         assert "Roman Reigns" not in prompt
+
+
+def test_extract_niche_section_captures_content_under_sub_headings():
+    section = extract_niche_section(DIGEST_SUBHEADINGS, ["AI/Tech"])
+    assert "Open-source AI tool" in section
+    assert "Google Agents CLI" in section
+    assert "Steam Deck" not in section
+
+
+def test_extract_niche_section_sub_heading_does_not_stop_capture():
+    section = extract_niche_section(DIGEST_SUBHEADINGS, ["Gaming"])
+    assert "Steam Deck" in section
+    assert "Open-source AI tool" not in section
 
 
 def test_write_reel_bengali_skips_without_llm_call_when_no_book_data():

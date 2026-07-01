@@ -56,12 +56,23 @@ def extract_niche_section(digest: str, keywords: list) -> str:
     Return only the markdown section(s) whose header line matches one of the
     given keywords (case-insensitive). Prevents a generator from grabbing an
     unrelated story (e.g. AI/Tech) when its own niche has no real content.
+
+    Capturing stops only when a heading at the same or higher level as the
+    matched heading is encountered — sub-headings (e.g. ####) inside the
+    section do not end capture.
     """
     lines = digest.split("\n")
     section, capturing = [], False
+    matched_level = 0
     for line in lines:
-        if line.strip().startswith("#"):
-            capturing = any(kw.lower() in line.lower() for kw in keywords)
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            level = len(stripped) - len(stripped.lstrip("#"))
+            if any(kw.lower() in stripped.lower() for kw in keywords):
+                capturing = True
+                matched_level = level
+            elif capturing and level <= matched_level:
+                capturing = False
         if capturing:
             section.append(line)
     return "\n".join(section).strip()

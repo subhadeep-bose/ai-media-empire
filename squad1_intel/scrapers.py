@@ -368,6 +368,381 @@ def fetch_movie_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
         return [{"platform": "Movies (Reddit)", "error": "scraper exception"}]
 
 
+# ── Scraper: TLDR AI newsletter (RSS) ────────────────────────────────────
+
+def fetch_tldr_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://tldr.tech/api/rss/ai"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "TLDR AI", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("TLDR AI scraper failed")
+        return [{"platform": "TLDR AI", "error": "scraper exception"}]
+
+
+# ── Scraper: Hacker News (AI stories via Algolia) ────────────────────────
+
+def fetch_hackernews_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = (
+        "https://hn.algolia.com/api/v1/search"
+        "?query=AI+machine+learning&tags=story&hitsPerPage=10"
+    )
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        hits = resp.json().get("hits", [])
+        results = []
+        for hit in hits[:limit]:
+            title = hit.get("title", "").strip()
+            if not title or not is_new(title, seen):
+                continue
+            summary = _truncate(hit.get("story_text") or hit.get("url") or "Hacker News discussion.")
+            results.append({"platform": "Hacker News", "title": title, "summary": _strip_html(summary)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Hacker News AI scraper failed")
+        return [{"platform": "Hacker News", "error": "scraper exception"}]
+
+
+# ── Scraper: r/MachineLearning ────────────────────────────────────────────
+
+def fetch_reddit_ml(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/MachineLearning/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "ML research discussion."
+            results.append({"platform": "Reddit/r/MachineLearning", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/MachineLearning scraper failed")
+        return [{"platform": "Reddit/r/MachineLearning", "error": "scraper exception"}]
+
+
+# ── Scraper: The Verge AI ─────────────────────────────────────────────────
+
+def fetch_verge_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else ""
+            results.append({"platform": "The Verge AI", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("The Verge AI scraper failed")
+        return [{"platform": "The Verge AI", "error": "scraper exception"}]
+
+
+# ── Scraper: Ben's Bites ──────────────────────────────────────────────────
+
+def fetch_bens_bites(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://bensbites.beehiiv.com/feed"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Ben's Bites", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Ben's Bites scraper failed")
+        return [{"platform": "Ben's Bites", "error": "scraper exception"}]
+
+
+# ── Scraper: VentureBeat AI ───────────────────────────────────────────────
+
+def fetch_venturebeat_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://venturebeat.com/category/ai/feed/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "VentureBeat AI", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("VentureBeat AI scraper failed")
+        return [{"platform": "VentureBeat AI", "error": "scraper exception"}]
+
+
+# ── Scraper: MIT Technology Review ────────────────────────────────────────
+
+def fetch_mit_tech_review(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.technologyreview.com/feed/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "MIT Tech Review", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("MIT Tech Review scraper failed")
+        return [{"platform": "MIT Tech Review", "error": "scraper exception"}]
+
+
+# ── Scraper: r/LocalLLaMA ─────────────────────────────────────────────────
+
+def fetch_reddit_localllama(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/LocalLLaMA/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "Local LLM discussion."
+            results.append({"platform": "Reddit/r/LocalLLaMA", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/LocalLLaMA scraper failed")
+        return [{"platform": "Reddit/r/LocalLLaMA", "error": "scraper exception"}]
+
+
+# ── Scraper: r/PS5 ────────────────────────────────────────────────────────
+
+def fetch_reddit_ps5(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/PS5/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "PS5 gaming discussion."
+            results.append({"platform": "Reddit/r/PS5", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/PS5 scraper failed")
+        return [{"platform": "Reddit/r/PS5", "error": "scraper exception"}]
+
+
+# ── Scraper: IGN ──────────────────────────────────────────────────────────
+
+def fetch_ign_gaming(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://feeds.ign.com/ign/all"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "IGN", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("IGN scraper failed")
+        return [{"platform": "IGN", "error": "scraper exception"}]
+
+
+# ── Scraper: Eurogamer ────────────────────────────────────────────────────
+
+def fetch_eurogamer(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.eurogamer.net/?format=rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Eurogamer", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Eurogamer scraper failed")
+        return [{"platform": "Eurogamer", "error": "scraper exception"}]
+
+
+# ── Scraper: BBC Sport ────────────────────────────────────────────────────
+
+def fetch_bbc_sport(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://feeds.bbci.co.uk/sport/rss.xml"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "BBC Sport", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("BBC Sport scraper failed")
+        return [{"platform": "BBC Sport", "error": "scraper exception"}]
+
+
+# ── Scraper: CricBuzz ─────────────────────────────────────────────────────
+
+def fetch_cricbuzz(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.cricbuzz.com/cricket-news/rss-feed"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "CricBuzz", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("CricBuzz scraper failed")
+        return [{"platform": "CricBuzz", "error": "scraper exception"}]
+
+
+# ── Scraper: r/television ─────────────────────────────────────────────────
+
+def fetch_reddit_television(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/television/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "TV/streaming discussion."
+            results.append({"platform": "Reddit/r/television", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/television scraper failed")
+        return [{"platform": "Reddit/r/television", "error": "scraper exception"}]
+
+
+# ── Scraper: Variety ──────────────────────────────────────────────────────
+
+def fetch_variety(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://variety.com/feed/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Variety", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Variety scraper failed")
+        return [{"platform": "Variety", "error": "scraper exception"}]
+
+
+# ── Scraper: The Hollywood Reporter ──────────────────────────────────────
+
+def fetch_hollywood_reporter(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.hollywoodreporter.com/feed/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Hollywood Reporter", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Hollywood Reporter scraper failed")
+        return [{"platform": "Hollywood Reporter", "error": "scraper exception"}]
+
+
 # ── Scraper: SteamDB / r/SteamDeck ────────────────────────────────────────
 
 def fetch_gaming_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
@@ -393,3 +768,120 @@ def fetch_gaming_trends(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     except Exception:
         log.exception("Gaming scraper failed")
         return [{"platform": "Gaming (SteamDeck/r)", "error": "scraper exception"}]
+
+
+# ── Scraper: PC Gamer ─────────────────────────────────────────────────────
+
+def fetch_pc_gamer(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.pcgamer.com/rss/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "PC Gamer", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("PC Gamer scraper failed")
+        return [{"platform": "PC Gamer", "error": "scraper exception"}]
+
+
+# ── Scraper: Rock Paper Shotgun ───────────────────────────────────────────
+
+def fetch_rock_paper_shotgun(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.rockpapershotgun.com/feed"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Rock Paper Shotgun", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Rock Paper Shotgun scraper failed")
+        return [{"platform": "Rock Paper Shotgun", "error": "scraper exception"}]
+
+
+# ── Scraper: r/Cricket ────────────────────────────────────────────────────
+
+def fetch_reddit_cricket(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/Cricket/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "Cricket discussion."
+            results.append({"platform": "Reddit/r/Cricket", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/Cricket scraper failed")
+        return [{"platform": "Reddit/r/Cricket", "error": "scraper exception"}]
+
+
+# ── Scraper: r/SquaredCircle (WWE) ────────────────────────────────────────
+
+def fetch_reddit_wwe(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.reddit.com/r/SquaredCircle/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit]:
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else "WWE/wrestling discussion."
+            results.append({"platform": "Reddit/r/SquaredCircle", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/SquaredCircle scraper failed")
+        return [{"platform": "Reddit/r/SquaredCircle", "error": "scraper exception"}]
+
+
+# ── Scraper: Deadline Hollywood ───────────────────────────────────────────
+
+def fetch_deadline(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://deadline.com/feed/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit]:
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "Deadline", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Deadline scraper failed")
+        return [{"platform": "Deadline", "error": "scraper exception"}]

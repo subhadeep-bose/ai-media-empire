@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from squad2_content.squad2_run import (
     extract_niche_section, write_reel_sports, write_reel_movies, write_reel_gaming,
     write_reel_ai, write_newsletter, write_twitter_thread, write_reel_bengali,
+    write_twitter_hot_take, write_twitter_weekly_poll,
 )
 
 DIGEST = """
@@ -174,3 +175,57 @@ def test_write_reel_bengali_calls_llm_when_book_data_present():
         result = write_reel_bengali(digest_with_book)
         assert result == "script"
         mock_llm.assert_called_once()
+
+
+def test_write_twitter_thread_produces_7_tweet_prompt():
+    with patch("squad2_content.squad2_run.call_llm", return_value="thread") as mock_llm:
+        write_twitter_thread(DIGEST)
+        prompt = mock_llm.call_args[0][0]
+        assert "7-tweet" in prompt
+        assert "Tweet 7" in prompt
+
+
+def test_write_twitter_hot_take_skips_without_llm_when_no_ai_tech():
+    with patch("squad2_content.squad2_run.call_llm") as mock_llm:
+        result = write_twitter_hot_take(DIGEST_NO_AI_TECH)
+        assert result == "NO AI/TECH CONTENT TODAY"
+        mock_llm.assert_not_called()
+
+
+def test_write_twitter_hot_take_calls_llm_with_only_ai_tech_section():
+    with patch("squad2_content.squad2_run.call_llm", return_value="AI is overrated.") as mock_llm:
+        result = write_twitter_hot_take(DIGEST)
+        assert result == "AI is overrated."
+        prompt = mock_llm.call_args[0][0]
+        assert "Gemini" in prompt
+        assert "Yastika Bhatia" not in prompt
+        assert "Roman Reigns" not in prompt
+
+
+def test_write_twitter_weekly_poll_skips_on_non_monday():
+    with patch("squad2_content.squad2_run.call_llm") as mock_llm:
+        with patch("squad2_content.squad2_run._dt") as mock_dt:
+            mock_dt.datetime.now.return_value.weekday.return_value = 1  # Tuesday
+            result = write_twitter_weekly_poll(DIGEST)
+        assert result == "NO POLL TODAY"
+        mock_llm.assert_not_called()
+
+
+def test_write_twitter_weekly_poll_returns_json_on_monday():
+    import json
+    poll_json = '{"question": "Which AI tool do you use most?", "options": ["ChatGPT", "Claude", "Gemini", "Other"]}'
+    with patch("squad2_content.squad2_run.call_llm", return_value=poll_json):
+        with patch("squad2_content.squad2_run._dt") as mock_dt:
+            mock_dt.datetime.now.return_value.weekday.return_value = 0  # Monday
+            result = write_twitter_weekly_poll(DIGEST)
+    parsed = json.loads(result)
+    assert "question" in parsed
+    assert len(parsed["options"]) == 4
+
+
+def test_write_twitter_weekly_poll_skips_invalid_json_on_monday():
+    with patch("squad2_content.squad2_run.call_llm", return_value="not valid json"):
+        with patch("squad2_content.squad2_run._dt") as mock_dt:
+            mock_dt.datetime.now.return_value.weekday.return_value = 0  # Monday
+            result = write_twitter_weekly_poll(DIGEST)
+    assert result == "NO POLL TODAY"

@@ -89,7 +89,10 @@ def write_newsletter(digest: str) -> str:
         return "NO AI/TECH CONTENT TODAY"
 
     return call_llm(f"""
-You are a sharp AI/tech newsletter editor. Write a weekly newsletter issue.
+You are a sharp AI/tech newsletter editor. Write a newsletter issue based STRICTLY on the digest below.
+
+⚠️ SOURCE LOCK: Every story, name, claim, and statistic you write MUST appear in the digest below.
+Do NOT invent stories, company names, product names, or events. If the digest has 2 stories, write 2 sections — do NOT pad to 3.
 
 AI/Tech section of today's digest (the ONLY content you may use):
 {ai_tech_context}
@@ -97,13 +100,15 @@ AI/Tech section of today's digest (the ONLY content you may use):
 FORMAT:
 - Subject line (punchy, under 50 chars)
 - Opening hook (2 sentences, conversational)
-- 3 main stories with headline, 2-sentence summary, and "Why it matters" in 1 line each
-- Closing thought (1 sentence opinion)
+- One section per story in the digest above (headline + 2-sentence summary + "Why it matters" in 1 line)
+- Closing thought (1 sentence opinion grounded in the stories above)
 - CTA: "Reply and tell me which story surprised you most."
 
-CRITICAL RULES:
-- ONLY use stories from the AI/Tech section above.
+HARD RULES:
+- ONLY use stories that appear verbatim in the digest above. Title-check each story against the digest.
+- NEVER reference Google, Microsoft, Amazon, Meta, or any company not named in the digest.
 - NEVER pull in or pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
+- If only 1-2 stories are in the digest, write 1-2 sections — never invent extras to fill a template.
 
 Tone: smart friend explaining tech over coffee. Contractions OK. Not corporate.
 Output ONLY the newsletter. No preamble.
@@ -123,21 +128,26 @@ def write_twitter_thread(digest: str) -> str:
     return call_llm(f"""
 You are a viral Twitter/X tech writer. Write a 7-tweet thread from this digest.
 
+⚠️ SOURCE LOCK: Every factual claim in every tweet MUST trace back to a specific story in the digest below.
+Do NOT invent companies, products, research outcomes, or statistics. If the digest has only 2-3 stories,
+go deeper on each one (implications, context, what it means for readers) — do NOT invent new stories to fill tweets.
+
 AI/Tech section of today's digest (the ONLY content you may use):
 {ai_tech_context}
 
 FORMAT:
-Tweet 1: Hook starting with "{hook()}" — must create curiosity gap, under 250 chars
-Tweets 2-5: One insight each, under 250 chars, numbered (2/7), (3/7) etc.
+Tweet 1: Hook starting with "{hook()}" — reference a REAL story from the digest above. Under 250 chars.
+Tweets 2-5: Expand on the real digest stories — one angle per tweet. Under 250 chars each. Numbered (2/7), (3/7) etc.
 Tweet 6: CTA — "Follow for daily AI drops" or similar, numbered (6/7)
-Tweet 7: An open engagement question that invites replies — e.g. "Which of these 6 stories surprised you most? Drop the number below 👇" or similar. Numbered (7/7). Under 200 chars.
+Tweet 7: Open engagement question about the ACTUAL stories above — e.g. "Which of these caught your eye most? Drop the number 👇". Numbered (7/7). Under 200 chars.
 
-Rules:
+HARD RULES:
 - No hashtags (they hurt reach).
+- NEVER mention Google, Microsoft, Meta, Amazon, or any company not named in the digest above.
+- NEVER invent statistics, model names, product names, or research results.
+- ONLY cover stories whose titles appear in the digest above.
 - Each tweet must stand alone AND flow as a thread.
-- ONLY use stories from the AI/Tech section above — never pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
-- NEVER invent statistics, numbers, or data not present in the source digest.
-- Only use facts directly from the digest — no embellishment.
+
 Output ONLY the 7 tweets. Separate each tweet with a line containing exactly three dashes on its own line:
 ---
 No labels like "Tweet 1:" — just the tweet text, then ---, then the next tweet text.
@@ -154,20 +164,24 @@ def write_twitter_hot_take(digest: str) -> str:
     return call_llm(f"""
 You are a contrarian AI/tech commentator with strong opinions. Write ONE standalone tweet.
 
+⚠️ SOURCE LOCK: Your opinion MUST react to a specific story named in the digest below.
+Do NOT reference companies, products, or research not in the digest.
+
 AI/Tech section of today's digest (the ONLY content you may use):
 {ai_tech_context}
 
 FORMAT:
 A single punchy opinion or hot take under 240 characters. No thread numbering.
-Must be opinionated — a real take, not a summary. Designed to provoke replies.
+Must be opinionated — a real take reacting to the digest, not a summary. Designed to provoke replies.
 
-Examples of the RIGHT tone:
+Examples of the RIGHT tone (react to the real story):
 - "Hot take: AI safety teams at big labs are the most expensive PR departments in history."
 - "The real AI story this week isn't the benchmark. It's that nobody asked if we needed it."
 - "Every 'open source' model release from a big lab is a marketing move. Fight me."
 
-CRITICAL RULES:
-- ONLY comment on stories from the AI/Tech section above.
+HARD RULES:
+- Your take MUST be about a topic that appears in the digest above.
+- NEVER reference Google, Microsoft, Meta, Amazon, OpenAI, or any entity not named in the digest.
 - NEVER invent statistics or quotes.
 - NO hashtags.
 - Output ONLY the tweet text. No preamble, no quotes around it.
@@ -219,18 +233,24 @@ def write_reel_ai(digest: str) -> str:
     return call_llm(f"""
 Write a 45-second Instagram Reel script for an AI/Tech account.
 
+⚠️ SOURCE LOCK: Every sentence in this script MUST be grounded in the digest below.
+Do NOT invent product names, company names, research outcomes, or statistics not in the digest.
+If the digest has 2-3 academic/research stories, make them exciting to a general audience — but stay factual.
+
 AI/Tech section of today's digest (the ONLY content you may use):
 {ai_tech_context}
 
 FORMAT:
-[HOOK 0-3s]: One sentence. Start with "{hook()}". Stop-scroll energy.
-[CONTEXT 3-15s]: 2-3 sentences. What is this, why now?
-[THE MEAT 15-35s]: 3 key points, each one punchy sentence.
+[HOOK 0-3s]: One sentence. Start with "{hook()}". Name or reference a REAL story from the digest.
+[CONTEXT 3-15s]: 2-3 sentences. What is this research/development, why does it matter now?
+[THE MEAT 15-35s]: 2-3 key points from the ACTUAL digest stories. Each one punchy sentence.
 [CTA 35-45s]: "Follow for daily AI news that actually matters."
 
-CRITICAL RULES:
-- ONLY use stories from the AI/Tech section above.
-- NEVER pull in or pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
+HARD RULES:
+- ONLY write about topics named in the AI/Tech section above.
+- NEVER mention Alexa, Google Home, smart home devices, or anything not in the digest.
+- NEVER invent stats, demos, or company names.
+- NEVER pull in Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
 
 Tone: energetic, clear, no jargon. Spoken words, not text.
 Output ONLY the script with timestamps. No preamble.
@@ -308,19 +328,24 @@ def write_reel_movies(digest: str) -> str:
     return call_llm(f"""
 Write a 45-second Reel script for a movie/series recommendation account.
 
+⚠️ SOURCE LOCK: You MUST write about one of the specific titles named in the digest below.
+Do NOT substitute a different film or series from your training knowledge — even a famous one.
+The title you choose MUST appear verbatim in the digest below.
+
 Movies & TV section of today's digest (the ONLY content you may use):
 {movies_context}
 
 FORMAT:
-[HOOK 0-3s]: "{hook()}" — bold claim about this film/series.
-[SELL IT 3-30s]: No spoilers. Sell the FEELING, not the plot. 4-5 vivid sentences.
-[CREDIBILITY 30-40s]: One real fact from the section above: box office, critic score, director, or award.
+[HOOK 0-3s]: "{hook()}" — bold claim about ONE of the titles listed in the digest above.
+[SELL IT 3-30s]: No spoilers. Sell the FEELING of that specific title. 4-5 vivid sentences.
+[CREDIBILITY 30-40s]: One real fact from the digest above: director, platform, release date, or genre.
 [CTA 40-45s]: "Watch it this weekend. Trust me. Follow for weekly picks."
 
-CRITICAL RULES:
-- ONLY write about the film/series named in the section above.
-- NEVER pull in or pivot to AI/Tech, Gaming, Sports, or any other niche's story.
-- NEVER invent box office numbers, critic scores, or awards not present above.
+HARD RULES:
+- The film/series title you write about MUST be copied verbatim from the digest above.
+- NEVER write about a title not in the digest (e.g. do not use "The Power of the Dog", "Parasite", etc.).
+- NEVER invent box office numbers, critic scores, or awards not present in the digest.
+- NEVER pull in AI/Tech, Gaming, Sports, or any other niche's story.
 - If the section above is empty or has no real movie/TV news, output exactly: NO MOVIES CONTENT TODAY
 
 Output ONLY the script. No preamble.
@@ -335,20 +360,25 @@ def write_reel_gaming(digest: str) -> str:
     return call_llm(f"""
 Write a 45-second Reel script for a PS5 and Steam Deck gaming account.
 
+⚠️ SOURCE LOCK: You MUST write about one of the specific games or updates named in the digest below.
+Do NOT substitute a different game title from your training knowledge.
+The game title you choose MUST appear verbatim in the digest below.
+
 Gaming section of today's digest (the ONLY content you may use):
 {gaming_context}
 
 FORMAT:
-[HOOK 0-3s]: "{hook()}" — must excite a gamer immediately.
-[THE DROP 3-25s]: Explain the game/update/deal in plain gamer language. Fast paced.
-[VERDICT 25-38s]: Worth it or skip? Your honest take in 2 sentences.
+[HOOK 0-3s]: "{hook()}" — reference a REAL game/update from the digest above. Must excite a gamer.
+[THE DROP 3-25s]: Explain the specific game/update from the digest in plain gamer language. Fast paced.
+[VERDICT 25-38s]: Worth it or skip? Your honest take in 2 sentences, based only on what the digest says.
 [CTA 38-45s]: "Follow for daily PS5 and Steam Deck drops before they sell out."
 
-CRITICAL RULES:
-- ONLY write about gaming topics in the section above (PS5, Steam Deck, PC gaming, game releases, deals, updates).
-- NEVER pull in or pivot to AI/Tech, Sports, Movies, or any other niche's story.
+HARD RULES:
+- The game title you write about MUST be copied verbatim from the digest above.
+- NEVER mention Steam Deck, Portal 2, The Witcher, or any title not in the digest above.
+- NEVER invent game titles, prices, release dates, or update details not in the digest.
+- NEVER pull in AI/Tech, Sports, Movies, or any other niche's story.
 - If the section above is empty or has no real gaming news, output exactly: NO GAMING CONTENT TODAY
-- NEVER invent game titles, prices, or release dates not in the section above.
 
 Output ONLY the script. No preamble.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)

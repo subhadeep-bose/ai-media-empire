@@ -892,3 +892,74 @@ def fetch_deadline(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     except Exception:
         log.exception("Deadline scraper failed")
         return [{"platform": "Deadline", "error": "scraper exception"}]
+
+
+# ── Scraper: Techmeme ─────────────────────────────────────────────────────
+
+def fetch_techmeme(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    """
+    Techmeme aggregates top tech stories by social signal in real-time.
+    Best source for breaking AI product launches (model releases, funding rounds)
+    that appear on Twitter/X within hours but take days to reach blog RSS feeds.
+    """
+    url = "https://www.techmeme.com/feed.op"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        candidates = items[:limit * SCRAPER_CANDIDATE_MULTIPLIER]
+        for item in candidates:
+            if len(results) >= limit:
+                break
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({
+                "platform": "Techmeme",
+                "title": title,
+                "summary": _truncate(_strip_html(raw)),
+            })
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Techmeme scraper failed")
+        return [{"platform": "Techmeme", "error": "scraper exception"}]
+
+
+# ── Scraper: Reddit r/singularity ─────────────────────────────────────────
+
+def fetch_reddit_singularity(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    """
+    r/singularity is faster than r/MachineLearning for breaking AI product news —
+    model releases, benchmark results, and viral AI moments surface here within
+    hours of announcement.
+    """
+    url = "https://www.reddit.com/r/singularity/.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        candidates = entries[:limit * SCRAPER_CANDIDATE_MULTIPLIER]
+        for entry in candidates:
+            if len(results) >= limit:
+                break
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else ""
+            results.append({
+                "platform": "Reddit/r/singularity",
+                "title": title,
+                "summary": _truncate(raw),
+            })
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("r/singularity scraper failed")
+        return [{"platform": "Reddit/r/singularity", "error": "scraper exception"}]

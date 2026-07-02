@@ -229,3 +229,86 @@ def test_write_twitter_weekly_poll_skips_invalid_json_on_monday():
             mock_dt.datetime.now.return_value.weekday.return_value = 0  # Monday
             result = write_twitter_weekly_poll(DIGEST)
     assert result == "NO POLL TODAY"
+
+
+# ── extract_niche_section: production ### pattern ──────────────────────────
+# Squad 1 uses ### for BOTH section headers and story titles inside sections.
+# The extractor must NOT stop capture when it hits a same-level story heading.
+
+DIGEST_PROD_PATTERN = """# Daily Intel Digest — 2026-07-02
+
+### AI/Tech
+### Machine Learning Systems
+- **Source**: GitHub
+- **Key Takeaway**: A book on ML systems.
+
+### Personalization as Inverse Planning
+- **Source**: arXiv
+- **Key Takeaway**: AI-powered slide personalisation.
+
+### Agri-SAGE: Simulation-Grounded Multi-Agent LLM
+- **Source**: arXiv
+- **Key Takeaway**: Agricultural advisory AI.
+
+### Bengali Books
+_No content today._
+
+### Sports
+_No content today._
+
+### Movies & TV
+### How Jolin Tsai's 'Pleasure' Finally Came Together
+- **Source**: Variety
+- **Key Takeaway**: British producer reveals the secret.
+
+### Gaming
+### Valheim 1.0 Won't Update Sparse Oceans
+- **Source**: Rock Paper Shotgun
+- **Key Takeaway**: 1.0 launch won't fix sparse oceans.
+
+### Final Biome, Deep North Coming to Valheim in 1.0
+- **Source**: Rock Paper Shotgun
+- **Key Takeaway**: New biome arrives in September.
+"""
+
+
+def test_extract_captures_all_stories_under_triple_hash_section():
+    """AI/Tech section must include all 3 story headings, not just the first."""
+    section = extract_niche_section(DIGEST_PROD_PATTERN, ["AI/Tech"])
+    assert "Machine Learning Systems" in section
+    assert "Personalization as Inverse Planning" in section
+    assert "Agri-SAGE" in section
+    # must not bleed into next niche
+    assert "Bengali Books" not in section
+    assert "Jolin Tsai" not in section
+
+
+def test_extract_gaming_captures_all_valheim_stories():
+    """Gaming section must include all Valheim stories, not stop at first ### story."""
+    section = extract_niche_section(DIGEST_PROD_PATTERN, ["Gaming"])
+    assert "Valheim 1.0 Won't Update" in section
+    assert "Final Biome" in section
+    # must not bleed into other niches
+    assert "Jolin Tsai" not in section
+    assert "Machine Learning" not in section
+
+
+def test_extract_movies_gets_jolin_tsai_not_gaming():
+    section = extract_niche_section(DIGEST_PROD_PATTERN, ["Movies", "Movies & TV", "TV"])
+    assert "Jolin Tsai" in section
+    assert "Valheim" not in section
+    assert "Machine Learning" not in section
+
+
+def test_extract_sports_returns_placeholder_only():
+    """Sports section with only _No content today._ should return that placeholder."""
+    section = extract_niche_section(DIGEST_PROD_PATTERN, ["Cricket", "Football", "WWE", "Sports"])
+    assert "No content today" in section
+    assert "Valheim" not in section
+
+
+def test_extract_stops_at_niche_boundary_not_story_heading():
+    """A story ### heading inside a section must not end capture early."""
+    section = extract_niche_section(DIGEST_PROD_PATTERN, ["AI/Tech"])
+    # All 3 sources should appear
+    assert section.count("### ") >= 4  # section header + 3 story headers

@@ -51,28 +51,39 @@ def hook() -> str:
 
 # ── Niche section extraction (prevents cross-niche content bleed) ─────────
 
+# Known top-level niche names used as section headers in the Squad 1 digest.
+# extract_niche_section() stops capture ONLY when the next heading matches one
+# of these — not on any same-level heading — because Squad 1 uses ### for both
+# section headers and story titles inside those sections.
+_NICHE_HEADERS = {
+    "ai/tech", "bengali books", "sports", "movies & tv", "movies",
+    "gaming", "editor's pick",
+}
+
+
 def extract_niche_section(digest: str, keywords: list) -> str:
     """
-    Return only the markdown section(s) whose header line matches one of the
-    given keywords (case-insensitive). Prevents a generator from grabbing an
-    unrelated story (e.g. AI/Tech) when its own niche has no real content.
+    Return only the markdown section whose header line matches one of the given
+    keywords (case-insensitive).
 
-    Capturing stops only when a heading at the same or higher level as the
-    matched heading is encountered — sub-headings (e.g. ####) inside the
-    section do not end capture.
+    Capturing stops at the next heading whose text matches a known niche header
+    (_NICHE_HEADERS), NOT at any same-level heading. This is critical because
+    Squad 1 uses ### for both section headers (### AI/Tech) and story titles
+    inside sections (### Machine Learning Systems) — stopping on any ### would
+    capture only the header line and deliver an empty context to generators.
     """
     lines = digest.split("\n")
     section, capturing = [], False
-    matched_level = 0
     for line in lines:
         stripped = line.strip()
         if stripped.startswith("#"):
-            level = len(stripped) - len(stripped.lstrip("#"))
-            if any(kw.lower() in stripped.lower() for kw in keywords):
+            heading_text = stripped.lstrip("#").strip().lower()
+            is_niche = any(n in heading_text for n in _NICHE_HEADERS)
+            if any(kw.lower() in heading_text for kw in keywords):
                 capturing = True
-                matched_level = level
-            elif capturing and level <= matched_level:
-                capturing = False
+            elif capturing and is_niche:
+                # Hit the next niche section — stop
+                break
         if capturing:
             section.append(line)
     return "\n".join(section).strip()

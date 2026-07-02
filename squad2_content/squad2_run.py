@@ -110,9 +110,14 @@ Output ONLY the newsletter. No preamble.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 
+_PLACEHOLDER_FRAGMENTS = ("no content today", "llm error", "no items", "_no content")
+
 def write_twitter_thread(digest: str) -> str:
     ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
     if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+    # Skip if the section only contains Squad 1 placeholder text (no real stories)
+    if any(p in ai_tech_context.lower() for p in _PLACEHOLDER_FRAGMENTS):
         return "NO AI/TECH CONTENT TODAY"
 
     return call_llm(f"""
@@ -142,6 +147,8 @@ No labels like "Tweet 1:" — just the tweet text, then ---, then the next tweet
 def write_twitter_hot_take(digest: str) -> str:
     ai_tech_context = extract_niche_section(digest, AI_TECH_KEYWORDS)
     if not ai_tech_context:
+        return "NO AI/TECH CONTENT TODAY"
+    if any(p in ai_tech_context.lower() for p in _PLACEHOLDER_FRAGMENTS):
         return "NO AI/TECH CONTENT TODAY"
 
     return call_llm(f"""

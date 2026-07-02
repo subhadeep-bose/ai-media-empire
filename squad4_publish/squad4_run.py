@@ -24,7 +24,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-from config import OUTPUT_DIR, SKIP_MARKERS, THREAD_HISTORY_PATH
+from config import OUTPUT_DIR, SKIP_MARKERS, THREAD_HISTORY_PATH, REPO_ROOT
 from reports.report_card import render_report_card
 import telegram_bot
 from runtime_args import get_date_str
@@ -57,6 +57,50 @@ def _parse_tweets(thread_text: str) -> list[str]:
 
 def _is_skipped(content: str) -> bool:
     return any(marker in content for marker in SKIP_MARKERS) or content.startswith("[ERROR]")
+
+
+SQUAD4_OUTPUT_DIR = REPO_ROOT / "squad4_output"
+
+
+def _save_cards(date_str: str, tweets: list[str], hot_take: str) -> Path:
+    """
+    Render and save tweet cards + plain-text files to squad4_output/<date>/.
+    Returns the output directory path.
+    Always runs regardless of posting success so the zip always contains cards.
+    """
+    out = SQUAD4_OUTPUT_DIR / date_str
+    out.mkdir(parents=True, exist_ok=True)
+
+    # Hero card — tweet 1
+    if tweets:
+        try:
+            hero = render_hero_card(tweets[0])
+            (out / "01_hero_card_tweet1.png").write_bytes(hero)
+            log.info("Saved hero card (%dKB)", len(hero) // 1024)
+        except Exception:
+            log.exception("Hero card render failed — skipping image")
+
+    # Hot take card
+    if hot_take:
+        try:
+            ht = render_hot_take_card(hot_take)
+            (out / "02_hot_take_card.png").write_bytes(ht)
+            log.info("Saved hot-take card (%dKB)", len(ht) // 1024)
+        except Exception:
+            log.exception("Hot-take card render failed — skipping image")
+
+    # Plain-text tweet files for manual copy-paste
+    if tweets:
+        tweet_lines = []
+        for i, t in enumerate(tweets, 1):
+            tweet_lines.append(f"TWEET {i}/{len(tweets)}:\n{t}")
+        (out / "tweets.txt").write_text("\n\n---\n\n".join(tweet_lines), encoding="utf-8")
+
+    if hot_take:
+        (out / "hot_take.txt").write_text(hot_take, encoding="utf-8")
+
+    log.info("Squad 4 cards saved → %s", out)
+    return out
 
 
 def _record_thread_id(date_str: str, tweet_id: str) -> None:
@@ -114,6 +158,11 @@ def main():
         except (json.JSONDecodeError, KeyError):
             log.warning("Poll JSON malformed — skipping")
 
+    # ── Save cards to squad4_output/ for artifact zip (always, before approval) ──
+    thread_tweets = _parse_tweets(twitter_text) if (twitter_text and not _is_skipped(twitter_text)) else []
+    ht_text = hot_take_text if (hot_take_text and not _is_skipped(hot_take_text)) else ""
+    _save_cards(date_str, thread_tweets, ht_text)
+
     if not publishable:
         log.info("Nothing to publish today.")
         render_report_card(
@@ -133,13 +182,11 @@ def main():
 
     # ── Twitter thread ─────────────────────────────────────────────────────
     if decisions.get("twitter_thread"):
-        tweets = _parse_tweets(twitter_text)
-        log.info("Rendering hero card for tweet 1...")
-        try:
-            hero = render_hero_card(tweets[0])
-        except Exception:
-            log.exception("Hero card render failed — posting thread without image")
-            hero = None
+        tweets = thread_tweets
+        hero_path = SQUAD4_OUTPUT_DIR / date_str / "01_hero_card_tweet1.png"
+        hero = hero_path.read_bytes() if hero_path.exists() else None
+        if not hero:
+            log.warning("Hero card not found on disk — posting thread without image")
 
         ok, tweet_1_id = post_thread(tweets, hero_image=hero)
         tag = "twitter_thread"
@@ -155,14 +202,12 @@ def main():
 
     # ── Hot take ───────────────────────────────────────────────────────────
     if decisions.get("twitter_hot_take"):
-        log.info("Rendering hot-take card...")
-        try:
-            ht_image = render_hot_take_card(hot_take_text)
-        except Exception:
-            log.exception("Hot-take card render failed — posting without image")
-            ht_image = None
+        ht_path = SQUAD4_OUTPUT_DIR / date_str / "02_hot_take_card.png"
+        ht_image = ht_path.read_bytes() if ht_path.exists() else None
+        if not ht_image:
+            log.warning("Hot-take card not found on disk — posting without image")
 
-        ok = post_hot_take(hot_take_text, image=ht_image)
+        ok = post_hot_take(ht_text, image=ht_image)
         if ok:
             posted_count += 1
             items.append({"tag": "hot_take", "text": "posted with hot-take card"})

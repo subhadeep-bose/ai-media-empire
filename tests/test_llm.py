@@ -112,4 +112,4 @@ def test_call_llm_falls_back_to_groq():
         result = call_llm("prompt", max_tokens=500)
 
     assert result == "Groq answer"
-    mock_groq.assert_called_once_with("prompt", 500)
+    mock_groq.assert_called_once_with("prompt", 500, model="llama-3.1-8b-instant")

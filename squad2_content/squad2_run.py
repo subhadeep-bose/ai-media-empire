@@ -23,7 +23,7 @@ logging.basicConfig(
 )
 log = logging.getLogger(__name__)
 
-from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS, HOT_TAKE_PENDING_PATH
+from config import DIGEST_PATH, OUTPUT_DIR, GROQ_MAX_TOKENS_CONTENT, SKIP_MARKERS, HOT_TAKE_PENDING_PATH, GROQ_MODEL_CONTENT
 from llm import call_llm
 from reports.report_card import render_report_card
 import telegram_bot
@@ -112,7 +112,7 @@ HARD RULES:
 
 Tone: smart friend explaining tech over coffee. Contractions OK. Not corporate.
 Output ONLY the newsletter. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 _PLACEHOLDER_FRAGMENTS = ("no content today", "llm error", "no items", "_no content")
@@ -151,7 +151,7 @@ HARD RULES:
 Output ONLY the 7 tweets. Separate each tweet with a line containing exactly three dashes on its own line:
 ---
 No labels like "Tweet 1:" — just the tweet text, then ---, then the next tweet text.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 def write_twitter_hot_take(digest: str) -> str:
@@ -185,7 +185,7 @@ HARD RULES:
 - NEVER invent statistics or quotes.
 - NO hashtags.
 - Output ONLY the tweet text. No preamble, no quotes around it.
-""", max_tokens=300)
+""", max_tokens=300, model=GROQ_MODEL_CONTENT)
 
 
 def write_twitter_weekly_poll(digest: str) -> str:
@@ -214,7 +214,7 @@ Rules:
 - Each option under 25 chars.
 - No hashtags.
 - Output ONLY the JSON object.
-""", max_tokens=200)
+""", max_tokens=200, model=GROQ_MODEL_CONTENT)
 
     try:
         import json as _json
@@ -254,7 +254,7 @@ HARD RULES:
 
 Tone: energetic, clear, no jargon. Spoken words, not text.
 Output ONLY the script with timestamps. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 def write_reel_sports(digest: str) -> str:
@@ -284,7 +284,7 @@ CRITICAL RULES - breaking these destroys credibility:
 
 Tone: match-day energy. Short sentences. Drama only for real events.
 Output ONLY the script. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 def write_reel_bengali(digest: str) -> str:
@@ -317,7 +317,7 @@ CRITICAL RULES:
 - Language: English with Bengali titles in native script.
 
 Output ONLY the script. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 def write_reel_movies(digest: str) -> str:
@@ -349,7 +349,7 @@ HARD RULES:
 - If the section above is empty or has no real movie/TV news, output exactly: NO MOVIES CONTENT TODAY
 
 Output ONLY the script. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 def write_reel_gaming(digest: str) -> str:
@@ -381,7 +381,7 @@ HARD RULES:
 - If the section above is empty or has no real gaming news, output exactly: NO GAMING CONTENT TODAY
 
 Output ONLY the script. No preamble.
-""", max_tokens=GROQ_MAX_TOKENS_CONTENT)
+""", max_tokens=GROQ_MAX_TOKENS_CONTENT, model=GROQ_MODEL_CONTENT)
 
 
 # ── Approval email ─────────────────────────────────────────────────────────

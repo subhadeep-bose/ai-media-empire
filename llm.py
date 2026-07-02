@@ -4,7 +4,7 @@ import requests
 import time
 from datetime import datetime
 
-from config import GROQ_MODEL, GROQ_RATE_LIMIT_RETRIES, GROQ_RATE_LIMIT_WAIT_BASE, OLLAMA_MODEL
+from config import GROQ_MODEL, GROQ_RATE_LIMIT_RETRIES, GROQ_RATE_LIMIT_WAIT_BASE, OLLAMA_MODEL, GROQ_MODEL_CONTENT
 from usage_tracker import record_groq_usage
 
 log = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ def call_ollama(prompt: str, max_tokens: int = 1500) -> str | None:
         return None
 
 
-def call_groq(prompt: str, max_tokens: int = 1000) -> str:
+def call_groq(prompt: str, max_tokens: int = 1000, model: str = GROQ_MODEL) -> str:
     if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
         return "[ERROR] No GROQ_API_KEY set"
     for attempt in range(GROQ_RATE_LIMIT_RETRIES):
@@ -30,7 +30,7 @@ def call_groq(prompt: str, max_tokens: int = 1000) -> str:
             resp = requests.post(
                 "https://api.groq.com/openai/v1/chat/completions",
                 headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-                json={"model": GROQ_MODEL, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
+                json={"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
                 timeout=60,
             )
             data = resp.json()
@@ -52,8 +52,8 @@ def call_groq(prompt: str, max_tokens: int = 1000) -> str:
     return "[ERROR] Groq rate limit exceeded after all retries"
 
 
-def call_llm(prompt: str, max_tokens: int = 1000) -> str:
+def call_llm(prompt: str, max_tokens: int = 1000, model: str = GROQ_MODEL) -> str:
     result = call_ollama(prompt, max_tokens)
     if result is not None:
         return result
-    return call_groq(prompt, max_tokens)
+    return call_groq(prompt, max_tokens, model=model)

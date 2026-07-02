@@ -4,15 +4,15 @@
     "last_run": "2026-07-02"
   },
   "gaming": {
-    "skip_streak": 1,
+    "skip_streak": 0,
     "last_run": "2026-07-02"
   },
   "bengali_books": {
-    "skip_streak": 9,
+    "skip_streak": 10,
     "last_run": "2026-07-02"
   },
   "sports": {
-    "skip_streak": 3,
+    "skip_streak": 4,
     "last_run": "2026-07-02"
   }
 }

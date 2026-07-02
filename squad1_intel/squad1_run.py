@@ -40,6 +40,7 @@ from scrapers import (
     fetch_tldr_ai, fetch_hackernews_ai, fetch_reddit_ml,
     fetch_venturebeat_ai, fetch_mit_tech_review, fetch_reddit_localllama,
     fetch_verge_ai, fetch_bens_bites,
+    fetch_huggingface_papers, fetch_simonwillison, fetch_rundown_ai, fetch_ai_supremacy,
     # Bengali Books
     scrape_bengali_goodreads,
     # Sports
@@ -126,7 +127,7 @@ def main():
     def limit_for(niche: str) -> int:
         return ITEMS_PER_SOURCE * NICHE_BOOST_MULTIPLIER if niche in boosted_niches else ITEMS_PER_SOURCE
 
-    log.info("Running all 30 scrapers with rate limiting...")
+    log.info("Running all 34 scrapers with rate limiting...")
 
     # ── Collect items grouped by niche ────────────────────────────────────
     niche_items = {
@@ -141,7 +142,11 @@ def main():
             fetch_mit_tech_review(seen) +
             fetch_reddit_localllama(seen) +
             fetch_verge_ai(seen) +
-            fetch_bens_bites(seen)
+            fetch_bens_bites(seen) +
+            fetch_huggingface_papers(seen) +
+            fetch_simonwillison(seen) +
+            fetch_rundown_ai(seen) +
+            fetch_ai_supremacy(seen)
         ),
         "Bengali Books": scrape_bengali_goodreads(seen, limit=limit_for("bengali_books")),
         "Sports": (

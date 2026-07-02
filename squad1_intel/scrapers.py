@@ -892,3 +892,104 @@ def fetch_deadline(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
     except Exception:
         log.exception("Deadline scraper failed")
         return [{"platform": "Deadline", "error": "scraper exception"}]
+
+
+# ── Scraper: Hugging Face Daily Papers ───────────────────────────────────
+
+def fetch_huggingface_papers(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://huggingface.co/papers.rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= limit:
+                break
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "HuggingFace Papers", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("HuggingFace Papers scraper failed")
+        return [{"platform": "HuggingFace Papers", "error": "scraper exception"}]
+
+
+# ── Scraper: Simon Willison's Blog ────────────────────────────────────────
+
+def fetch_simonwillison(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://simonwillison.net/atom/everything/"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        entries = soup.find_all("entry")
+        results = []
+        for entry in entries[:limit * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= limit:
+                break
+            title = entry.title.get_text(strip=True) if entry.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            content_tag = entry.find("content") or entry.find("summary")
+            raw = _strip_html(content_tag.get_text(strip=True)) if content_tag else ""
+            results.append({"platform": "Simon Willison", "title": title, "summary": _truncate(raw)})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("Simon Willison scraper failed")
+        return [{"platform": "Simon Willison", "error": "scraper exception"}]
+
+
+# ── Scraper: The Rundown AI (RSS) ─────────────────────────────────────────
+
+def fetch_rundown_ai(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://www.therundown.ai/rss"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= limit:
+                break
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "The Rundown AI", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("The Rundown AI scraper failed")
+        return [{"platform": "The Rundown AI", "error": "scraper exception"}]
+
+
+# ── Scraper: AI Supremacy (Substack RSS) ──────────────────────────────────
+
+def fetch_ai_supremacy(seen: set, limit: int = ITEMS_PER_SOURCE) -> list:
+    url = "https://aisupremacy.substack.com/feed"
+    try:
+        resp = requests.get(url, headers=_headers(), timeout=SCRAPER_TIMEOUT)
+        _sleep()
+        soup = BeautifulSoup(resp.text, "xml")
+        items = soup.find_all("item")
+        results = []
+        for item in items[:limit * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= limit:
+                break
+            title = item.title.get_text(strip=True) if item.title else ""
+            if not title or not is_new(title, seen):
+                continue
+            raw = item.description.get_text(strip=True) if item.description else ""
+            results.append({"platform": "AI Supremacy", "title": title, "summary": _truncate(_strip_html(raw))})
+            mark_seen(title, seen)
+        return results
+    except Exception:
+        log.exception("AI Supremacy scraper failed")
+        return [{"platform": "AI Supremacy", "error": "scraper exception"}]

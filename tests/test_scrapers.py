@@ -98,3 +98,75 @@ def test_github_scraper_returns_error_on_exception():
     assert len(results) == 1
     assert "error" in results[0]
     assert results[0]["platform"] == "GitHub"
+
+
+# ── new AI source scrapers ─────────────────────────────────────────────────
+
+def _mock_rss(items_xml: str) -> MagicMock:
+    """Return a mock requests.Response with RSS/Atom XML body."""
+    mock_resp = MagicMock()
+    mock_resp.text = f'<?xml version="1.0"?><rss version="2.0"><channel>{items_xml}</channel></rss>'
+    mock_resp.status_code = 200
+    return mock_resp
+
+
+def _mock_atom(entries_xml: str) -> MagicMock:
+    mock_resp = MagicMock()
+    mock_resp.text = f'<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom">{entries_xml}</feed>'
+    mock_resp.status_code = 200
+    return mock_resp
+
+
+def test_fetch_huggingface_papers_returns_results():
+    from scrapers import fetch_huggingface_papers
+    xml = "<item><title>Attention Is All You Need Redux</title><description>A new paper on transformers.</description></item>" * 3
+    with patch("scrapers.requests.get", return_value=_mock_rss(xml)):
+        results = fetch_huggingface_papers(set())
+    assert len(results) > 0
+    assert results[0]["platform"] == "HuggingFace Papers"
+
+
+def test_fetch_huggingface_papers_deduplicates():
+    from scrapers import fetch_huggingface_papers
+    xml = "<item><title>Same Paper Every Day</title><description>desc</description></item>" * 3
+    seen: set = set()
+    with patch("scrapers.requests.get", return_value=_mock_rss(xml)):
+        fetch_huggingface_papers(seen)
+        results2 = fetch_huggingface_papers(seen)
+    assert results2 == []
+
+
+def test_fetch_simonwillison_returns_results():
+    from scrapers import fetch_simonwillison
+    xml = "<entry><title>Notes on LLM tool use</title><content>Great insight here.</content></entry>" * 3
+    with patch("scrapers.requests.get", return_value=_mock_atom(xml)):
+        results = fetch_simonwillison(set())
+    assert len(results) > 0
+    assert results[0]["platform"] == "Simon Willison"
+
+
+def test_fetch_rundown_ai_returns_results():
+    from scrapers import fetch_rundown_ai
+    xml = "<item><title>Today in AI: GPT-5 Rumours</title><description>Daily roundup.</description></item>" * 3
+    with patch("scrapers.requests.get", return_value=_mock_rss(xml)):
+        results = fetch_rundown_ai(set())
+    assert len(results) > 0
+    assert results[0]["platform"] == "The Rundown AI"
+
+
+def test_fetch_ai_supremacy_returns_results():
+    from scrapers import fetch_ai_supremacy
+    xml = "<item><title>AI is changing everything</title><description>Weekly analysis.</description></item>" * 3
+    with patch("scrapers.requests.get", return_value=_mock_rss(xml)):
+        results = fetch_ai_supremacy(set())
+    assert len(results) > 0
+    assert results[0]["platform"] == "AI Supremacy"
+
+
+def test_new_scrapers_return_error_on_exception():
+    from scrapers import fetch_huggingface_papers, fetch_simonwillison, fetch_rundown_ai, fetch_ai_supremacy
+    for fn in [fetch_huggingface_papers, fetch_simonwillison, fetch_rundown_ai, fetch_ai_supremacy]:
+        with patch("scrapers.requests.get", side_effect=ConnectionError("timeout")):
+            results = fn(set())
+        assert len(results) == 1
+        assert "error" in results[0]

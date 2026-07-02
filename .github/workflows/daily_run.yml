@@ -114,6 +114,7 @@ jobs:
             master_intel_digest.md
             squad2_output/**
             squad3_output/**
+            squad4_output/**
             reports/**
           retention-days: 7
 

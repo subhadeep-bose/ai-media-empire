@@ -70,9 +70,9 @@ jobs:
           TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
           TWITTER_BEARER_TOKEN: ${{ secrets.TWITTER_BEARER_TOKEN }}
           TWITTER_HANDLE: ${{ secrets.TWITTER_HANDLE }}
-          BRAND_BG_COLOR: ${{ secrets.BRAND_BG_COLOR }}
-          BRAND_ACCENT_COLOR: ${{ secrets.BRAND_ACCENT_COLOR }}
-          BRAND_TEXT_COLOR: ${{ secrets.BRAND_TEXT_COLOR }}
+          BRAND_BG_COLOR: ${{ vars.BRAND_BG_COLOR }}
+          BRAND_ACCENT_COLOR: ${{ vars.BRAND_ACCENT_COLOR }}
+          BRAND_TEXT_COLOR: ${{ vars.BRAND_TEXT_COLOR }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           TELEGRAM_BOT_TOKEN_SQUAD4_PUBLISH: ${{ secrets.TELEGRAM_BOT_TOKEN_SQUAD4_PUBLISH }}

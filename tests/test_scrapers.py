@@ -220,3 +220,95 @@ def test_reddit_singularity_error_handling():
     assert len(results) == 1
     assert "error" in results[0]
     assert results[0]["platform"] == "Reddit/r/singularity"
+
+
+# ── HuggingFace Papers / Simon Willison / Rundown AI / AI Supremacy ────────
+
+_FAKE_RSS = """<?xml version="1.0"?>
+<rss><channel>
+  <item><title>Fresh AI Story One</title><description>Summary one.</description></item>
+  <item><title>Fresh AI Story Two</title><description>Summary two.</description></item>
+</channel></rss>"""
+
+_FAKE_ATOM = """<?xml version="1.0"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry><title>Fresh Atom Story</title><content>Atom summary.</content></entry>
+</feed>"""
+
+
+def _mock_get(text):
+    resp = MagicMock()
+    resp.text = text
+    return resp
+
+
+def test_huggingface_papers_returns_results():
+    from scrapers import fetch_huggingface_papers
+    with patch("scrapers.requests.get", return_value=_mock_get(_FAKE_RSS)), \
+         patch("scrapers.time.sleep"):
+        results = fetch_huggingface_papers(set())
+    assert len(results) >= 1
+    assert results[0]["platform"] == "HuggingFace Papers"
+
+
+def test_huggingface_papers_error_handling():
+    from scrapers import fetch_huggingface_papers
+    with patch("scrapers.requests.get", side_effect=ConnectionError("timeout")):
+        results = fetch_huggingface_papers(set())
+    assert len(results) == 1
+    assert "error" in results[0]
+    assert results[0]["platform"] == "HuggingFace Papers"
+
+
+def test_simonwillison_returns_results():
+    from scrapers import fetch_simonwillison
+    with patch("scrapers.requests.get", return_value=_mock_get(_FAKE_ATOM)), \
+         patch("scrapers.time.sleep"):
+        results = fetch_simonwillison(set())
+    assert len(results) >= 1
+    assert results[0]["platform"] == "Simon Willison"
+
+
+def test_simonwillison_error_handling():
+    from scrapers import fetch_simonwillison
+    with patch("scrapers.requests.get", side_effect=ConnectionError("timeout")):
+        results = fetch_simonwillison(set())
+    assert len(results) == 1
+    assert "error" in results[0]
+
+
+def test_rundown_ai_returns_results():
+    from scrapers import fetch_rundown_ai
+    with patch("scrapers.requests.get", return_value=_mock_get(_FAKE_RSS)), \
+         patch("scrapers.time.sleep"):
+        results = fetch_rundown_ai(set())
+    assert len(results) >= 1
+    assert results[0]["platform"] == "The Rundown AI"
+
+
+def test_rundown_ai_dedup():
+    from scrapers import fetch_rundown_ai, mark_seen
+    seen: set = set()
+    mark_seen("Fresh AI Story One", seen)
+    mark_seen("Fresh AI Story Two", seen)
+    with patch("scrapers.requests.get", return_value=_mock_get(_FAKE_RSS)), \
+         patch("scrapers.time.sleep"):
+        results = fetch_rundown_ai(seen)
+    assert results == []
+
+
+def test_ai_supremacy_returns_results():
+    from scrapers import fetch_ai_supremacy
+    with patch("scrapers.requests.get", return_value=_mock_get(_FAKE_RSS)), \
+         patch("scrapers.time.sleep"):
+        results = fetch_ai_supremacy(set())
+    assert len(results) >= 1
+    assert results[0]["platform"] == "AI Supremacy"
+
+
+def test_ai_supremacy_error_handling():
+    from scrapers import fetch_ai_supremacy
+    with patch("scrapers.requests.get", side_effect=ConnectionError("timeout")):
+        results = fetch_ai_supremacy(set())
+    assert len(results) == 1
+    assert "error" in results[0]

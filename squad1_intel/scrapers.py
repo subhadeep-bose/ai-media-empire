@@ -30,6 +30,7 @@ from config import (
     SCRAPER_TIMEOUT,
     RATE_LIMIT_SECS,
     ITEMS_PER_SOURCE,
+    SCRAPER_CANDIDATE_MULTIPLIER,
     SUMMARY_MAX_CHARS,
     SEEN_ITEMS_PATH,
 )
@@ -136,7 +137,9 @@ def scrape_github_trending(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "html.parser")
         repos = soup.find_all("article", class_="Box-row")
         results = []
-        for repo in repos[:ITEMS_PER_SOURCE]:
+        for repo in repos[:ITEMS_PER_SOURCE * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= ITEMS_PER_SOURCE:
+                break
             title_tag = repo.find("h2")
             title = title_tag.get_text(strip=True).replace(" ", "").replace("\n", "") if title_tag else ""
             if not title or not is_new(title, seen):
@@ -161,7 +164,9 @@ def fetch_arxiv_ai_papers(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         items = soup.find_all("item")
         results = []
-        for item in items[:ITEMS_PER_SOURCE]:
+        for item in items[:ITEMS_PER_SOURCE * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= ITEMS_PER_SOURCE:
+                break
             title = item.title.get_text(strip=True) if item.title else ""
             if not title or not is_new(title, seen):
                 continue
@@ -185,7 +190,9 @@ def scrape_reddit_ai(seen: set) -> list:
         soup = BeautifulSoup(resp.text, "xml")
         entries = soup.find_all("entry")
         results = []
-        for entry in entries[:ITEMS_PER_SOURCE]:
+        for entry in entries[:ITEMS_PER_SOURCE * SCRAPER_CANDIDATE_MULTIPLIER]:
+            if len(results) >= ITEMS_PER_SOURCE:
+                break
             title = entry.title.get_text(strip=True) if entry.title else ""
             if not title or not is_new(title, seen):
                 continue

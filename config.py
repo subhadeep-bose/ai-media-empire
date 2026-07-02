@@ -4,7 +4,8 @@ import os
 REPO_ROOT = Path(__file__).parent
 
 # LLM
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "llama-3.1-8b-instant"          # Squad 1 intel summarisation (fast, cheap)
+GROQ_MODEL_CONTENT = "llama-3.3-70b-versatile"  # Squad 2 content generation (better instruction-following)
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3:8b")
 GROQ_MAX_TOKENS_INTEL = 2500
 GROQ_MAX_TOKENS_CONTENT = 1000

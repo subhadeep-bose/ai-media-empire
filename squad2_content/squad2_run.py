@@ -133,7 +133,9 @@ Rules:
 - ONLY use stories from the AI/Tech section above — never pivot to Cricket, Football, WWE, Movies, Gaming, or Bengali Books.
 - NEVER invent statistics, numbers, or data not present in the source digest.
 - Only use facts directly from the digest — no embellishment.
-Output ONLY the tweets separated by ---
+Output ONLY the 7 tweets. Separate each tweet with a line containing exactly three dashes on its own line:
+---
+No labels like "Tweet 1:" — just the tweet text, then ---, then the next tweet text.
 """, max_tokens=GROQ_MAX_TOKENS_CONTENT)
 
 

@@ -16,6 +16,11 @@ SCRAPER_TIMEOUT = 10
 RATE_LIMIT_SECS = 2
 ITEMS_PER_SOURCE = 3
 SUMMARY_MAX_CHARS = 150
+# How many raw candidates to scan per source before dedup filtering.
+# Prevents dedup from silently wiping all results when the top N items
+# were already seen yesterday. Scrapers fetch up to this many candidates
+# and return at most ITEMS_PER_SOURCE new ones.
+SCRAPER_CANDIDATE_MULTIPLIER = 5
 
 # Squad 2 generators write one of these exact strings when a niche has no
 # real content today; Squad 3 reads the same list to decide what to skip.

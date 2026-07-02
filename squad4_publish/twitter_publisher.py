@@ -34,8 +34,14 @@ def _client():
     acc_token  = os.getenv("TWITTER_ACCESS_TOKEN", "")
     acc_secret = os.getenv("TWITTER_ACCESS_TOKEN_SECRET", "")
 
-    if not all([api_key, api_secret, acc_token, acc_secret]):
-        raise RuntimeError("Missing one or more TWITTER_* env vars")
+    missing = [name for name, val in [
+        ("TWITTER_API_KEY", api_key),
+        ("TWITTER_API_SECRET", api_secret),
+        ("TWITTER_ACCESS_TOKEN", acc_token),
+        ("TWITTER_ACCESS_TOKEN_SECRET", acc_secret),
+    ] if not val]
+    if missing:
+        raise RuntimeError(f"Missing Twitter env vars: {', '.join(missing)}")
 
     auth = tweepy.OAuth1UserHandler(api_key, api_secret, acc_token, acc_secret)
     api_v1 = tweepy.API(auth)

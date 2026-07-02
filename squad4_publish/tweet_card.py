@@ -44,8 +44,16 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont:
         return ImageFont.load_default()
 
 
-def _hex_to_rgb(hex_color: str) -> tuple:
-    h = hex_color.lstrip("#")
+_COLOR_DEFAULTS = {
+    "bg":     "#0D1117",
+    "accent": "#6C63FF",
+    "text":   "#FFFFFF",
+}
+
+def _hex_to_rgb(hex_color: str, fallback: str = "#FFFFFF") -> tuple:
+    h = (hex_color or fallback).lstrip("#")
+    if len(h) != 6:
+        h = fallback.lstrip("#")
     return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
 
 
@@ -61,9 +69,9 @@ def render_hero_card(tweet_text: str) -> bytes:
     This is the scroll-stopper; it stands alone visually.
     """
     W, H = TWEET_CARD_WIDTH, TWEET_CARD_HEIGHT
-    bg = _hex_to_rgb(BRAND_BG_COLOR)
-    accent = _hex_to_rgb(BRAND_ACCENT_COLOR)
-    white = _hex_to_rgb(BRAND_TEXT_COLOR)
+    bg = _hex_to_rgb(BRAND_BG_COLOR, "#0D1117")
+    accent = _hex_to_rgb(BRAND_ACCENT_COLOR, "#6C63FF")
+    white = _hex_to_rgb(BRAND_TEXT_COLOR, "#FFFFFF")
     muted = tuple(min(255, c + 45) for c in bg)
 
     img = Image.new("RGB", (W, H), color=bg)
@@ -121,7 +129,7 @@ def render_hot_take_card(tweet_text: str) -> bytes:
     W, H = TWEET_CARD_WIDTH, TWEET_CARD_HEIGHT
     bg = (18, 10, 10)
     accent = (255, 80, 80)
-    white = _hex_to_rgb(BRAND_TEXT_COLOR)
+    white = _hex_to_rgb(BRAND_TEXT_COLOR, "#FFFFFF")
     muted = (120, 100, 100)
 
     img = Image.new("RGB", (W, H), color=bg)

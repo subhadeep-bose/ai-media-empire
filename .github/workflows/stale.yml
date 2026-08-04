@@ -15,7 +15,7 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v11
         with:
           only-labels: 'pipeline-failure,api-health'
           days-before-stale: 14
